@@ -7,3 +7,5 @@ DROP TABLE user_project_items CASCADE;
 DROP TABLE tasks CASCADE;
 DROP TABLE activity_on_task CASCADE;
 DROP TABLE task_dependences CASCADE;
+
+DROP DOMAIN role;

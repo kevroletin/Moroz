@@ -1,5 +1,13 @@
 BEGIN;
 
+/* DOMAINS */
+
+create domain role as 
+  TEXT NOT NULL
+  check (value in ('manager', 'developer'));
+
+/* TABLES and INDEXES */
+
 create table companies (
   id SERIAL PRIMARY KEY,
   name TEXT NOT NULL
@@ -40,7 +48,7 @@ create table user_project_items (
   id SERIAL PRIMARY KEY,
   project_id INTEGER REFERENCES companies(id),
   user_id INTEGER REFERENCES users(id),
-  role INTEGER /* TODO: create domain */,
+  role ROLE,
   is_active BOOL DEFAULT('true')
 );
 
