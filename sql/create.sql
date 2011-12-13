@@ -21,8 +21,11 @@ create table contracts (
 
 create table company_contract_items (
 /*   id SERIAL PRIMARY KEY, */
-  company_id INTEGER REFERENCES companies(id),
-  contract_id INTEGER REFERENCES contracts(id)
+  company_id INTEGER NOT NULL REFERENCES companies(id), 
+  contract_id INTEGER NOT NULL REFERENCES contracts(id),
+
+  constraint company_contract_items_unique_constraint
+      unique(company_id, contract_id)
 );
 
 create index company_contract_items_company_id_index
@@ -34,7 +37,8 @@ create index company_contract_items_contract_id_index
 create table users (
   id SERIAL PRIMARY KEY,
   name TEXT NOT NULL,
-  is_administrator BOOL DEFAULT('false')
+  password TEXT NOT NULL,
+  is_admin BOOL DEFAULT('false')
 );
 
 create table projects (
@@ -65,14 +69,21 @@ create table activity_on_task (
   description TEXT NOT NULL,
   start_time TIMESTAMP DEFAULT(current_timestamp),
   finish_time TIMESTAMP DEFAULT(NULL),
-  tasks INTEGER REFERENCES companies(id),
-  user_project_item_id INTEGER REFERENCES user_project_items(id)
+  task_id INTEGER NOT NULL REFERENCES tasks(id),
+  user_project_item_id INTEGER NOT NULL 
+                       REFERENCES user_project_items(id),
+
+  constraint activity_on_task_unique_refs_constraint
+      unique(task_id, user_project_item_id)
 );
 
 create table task_dependences  (
 /*  id SERIAL PRIMARY KEY, */
-  blocking_task_id INTEGER REFERENCES tasks(id),
-  depended_task_id INTEGER REFERENCES tasks(id)
+  blocking_task_id INTEGER NOT NULL REFERENCES tasks(id),
+  depended_task_id INTEGER NOT NULL REFERENCES tasks(id),
+
+  constraint task_dependences_unique_constraint
+      unique(blocking_task_id, depended_task_id)
 );
 
 create index task_dependences_blocking_task_id_index
