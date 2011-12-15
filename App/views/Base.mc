@@ -16,6 +16,9 @@
 
 <div>
 % print( $.user ? $.user->{name} : 'not logined' );
+% # <p><pre>
+% #  use Data::Dumper; print Dumper $.user;
+% # </pre></p>
 </div>
 
 
