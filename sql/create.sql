@@ -38,6 +38,7 @@ create table users (
   id SERIAL PRIMARY KEY,
   name TEXT NOT NULL,
   password TEXT NOT NULL,
+  company_id INTEGER REFERENCES companies(id),
   is_admin BOOL DEFAULT('false')
 );
 
@@ -92,5 +93,9 @@ create index task_dependences_blocking_task_id_index
 create index task_dependences_depended_task_id_index
   on task_dependences ( depended_task_id );
 
+
+create view users_full as
+select u.id, u.name, u.is_admin, c.name as company from users u
+  left join companies c on u.company_id = c.id;
 
 COMMIT;

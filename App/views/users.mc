@@ -17,6 +17,7 @@
     <td>Is admin: 
       <% ['not admin', 'admin']->[$u->{is_admin} ? 1 : 0] %>
     </td>
+    <td>Company: <% $u->{company} %></td>
     <td>
       <a href="user/<% $u->{id} %>">viev</a>
     </td>

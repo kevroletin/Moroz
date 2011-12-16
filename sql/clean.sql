@@ -9,3 +9,6 @@ DROP TABLE activity_on_task CASCADE;
 DROP TABLE task_dependences CASCADE;
 
 DROP DOMAIN role;
+
+DROP VIEW users_full;
+
