@@ -63,6 +63,7 @@ create table user_project_items (
 create table tasks (
   id SERIAL PRIMARY KEY,
   name TEXT NOT NULL,
+  project_id INTEGER REFERENCES projects(id),
   estimate_time TIME,
   is_active BOOL DEFAULT('true')
 );

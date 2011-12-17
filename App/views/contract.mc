@@ -22,7 +22,7 @@
     <% $.f->('name') %>
 % }
     </p>
-    <p>
+    <p> Project:
       <select name="project_id">
 % for (@proj){
         <option value="<% $_->{id} %>"
@@ -39,6 +39,8 @@
     </p>
 
   </form>
+
+<hr />
 
 % if ($.user->{is_admin}) {
 %   $.curr_f->('contract');
@@ -80,6 +82,10 @@
     <p> Name:
       <% $.f->('name') %>
     </p>
+    <p> Project: 
+      <a href="/project/<% $.f->('project_id') %>">
+        <% $.f->('project') %>
+      </a>
   </div>
 
 % }
@@ -98,14 +104,11 @@
         <% $r->{name} %>
         </a>
     </td>
-    <td>
-      <a href="/contract/<% $contract_id %>/company/<% $r->{id} %>/users">view users</a>
-    </td>
 %   if ($.user()->{is_admin}) {
     <td>
         <form method="post" 
               action="/contract/<% $contract_id %>/company/<% $r->{id} %>/delete" >
-          <input type="submit" value="delete" />
+          <input type="submit" value="remove" />
         </form>
     </td>
 %   }

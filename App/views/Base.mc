@@ -15,7 +15,11 @@
 <body>
 
 <div style="float: right">
-% print( $.user ? $.user->{name} : 'not logined' );
+% if ($.user) {
+<a href="/user/<% $.user->{id} %>" >
+% }
+ <% $.user ? $.user->{name} : 'not logined' %>
+</a> |
 % # <p><pre>
 % #  use Data::Dumper; print Dumper $.user;
 % # </pre></p>

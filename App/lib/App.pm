@@ -49,6 +49,17 @@ sub admin_only {
     }
 }
 
+sub is_manager { # TODO:
+}
+
+sub manager_only {
+    my $s = shift;
+    sub {
+        # TODO:
+        $s->(@_);
+    }
+}
+
 hook 'before' => sub {
     if (session('user_id')) {
         # FIXME:
@@ -303,15 +314,92 @@ prefix '/project' => sub {
 
     get '/*/tasks' => sub {
         my ($id) = splat;
-        # TODO:
+        my $sth = database()->prepare(
+            "select * from tasks where project_id = $id");
+        $sth->execute();
+        template "/project/tasks" => {
+            tasks_sth => $sth,
+            project_id => $id
+        }
     };
 
-    get '/*/users' => sub {
-        my ($id) = splat;
+    get '/*/tasks/add' => sub {
+        my ($project_id) = splat;
+        delete $forms->{task};
+        template 'project/task' => {
+            action => "add",
+            project_id => $project_id,
+            project => vars->{project}
+        }
+    };
+
+    post '/*/tasks/add' => sub {
+        my ($project_id) = splat;
+        my $f = to_forms('task')->('name', 'estimate_time');
+        $f->{project_id} = $project_id;
+        database()->quick_insert('tasks', $f);
+        redirect "project/$project_id/tasks";
+    };
+
+    get '/*/task/*'=> sub {
+        my ($project_id, $task_id) = splat;
+        my $task = database()->quick_select(
+                                 'tasks', {id => $task_id});
+        return send_error('not found', 404) unless $task;
+        $forms->{task} = $task;
+        template 'project/task' => {
+            action => undef,
+            project_id => $project_id,
+            project => vars->{project}
+        }
+    };
+
+    any ['get', 'post'] => '/*/task/**' => sub {
+        my ($project_id, $p) = splat;
+        my $task_id = shift $p;
+        my $task = database()->quick_select(
+                                 'tasks', {id => $task_id});
+        return send_error('not found', 404) unless $task;
+        if (@$p > 0) {
+            var task => $task;
+            var task_id => $task_id;
+            return pass
+        }
+
         template 'project/users' => {
            project => vars->{project},
            project_id => vars->{project_id}
+    };
+
+    };
+
+    get '/*/task/*/edit' => manager_only sub {
+        my ($project_id, $task_id) = splat;
+        $forms->{task} = vars->{task};
+        template 'project/task' => {
+            action => "edit",
+            project_id => $project_id,
+            project => vars->{project}
         }
+    };
+
+    post '/*/task/*/edit' => manager_only sub {
+        my ($project_id, $task_id) = splat;
+        my $f = to_forms('task')->('estimate_time', 'is_active');
+        database()->quick_update('tasks', { id => $task_id},  $f);
+        $forms->{task} = database()->quick_select(
+                                         'tasks', {id => $task_id});
+        template 'project/task' => {
+            action => "edit",
+            project_id => $project_id,
+            project => vars->{project}
+        }
+    };
+
+    post '/*/task/*/delete' => manager_only sub {
+        my ($project_id, $task_id) = splat;
+        database()->quick_delete('tasks', { id => $task_id});
+        redirect "project/$project_id/tasks";
     };
 
     post '/*/users/add' => admin_only sub {
@@ -354,12 +442,17 @@ prefix '/contract' => sub {
     any ['get', 'post'] => '/**' => sub {
         my ($p) = splat();
         my $id = shift @{$p};
-        my $comp = database()->quick_select('contracts', {id => $id});
-        return send_error("Not found", 404) unless ($comp);
-        var contract => $comp;
-        var contract_id => $id;
-        return pass if @$p > 0;
+        if (@$p > 0) {
+            my $comp = database()->quick_select('contracts',
+                                                {id => $id});
+            return send_error("Not found", 404) unless ($comp);
+            var contract => $comp;
+            var contract_id => $id;
+            pass
+        }
 
+        my $comp = database()->quick_select('contracts_full',
+                                            {id => $id});
         $forms->{contract} = $comp;
         template 'contract' => { action => undef };
     };
@@ -414,7 +507,77 @@ prefix '/contract' => sub {
 
 };
 
+=begin comment
+
+prefix '/task' => sub {
+
+    get 's' => sub {
+        my @q = database()->quick_select('tasks', {});
+        template 'tasks' => { tasks => \@q };
+    };
+
+    get 's/add' => admin_only sub {
+        delete $forms->{task};
+        template 'task' => { action => '/tasks/add' };
+    };
+
+    post 's/add' => admin_only sub {
+        my $f = to_forms('task')->(qw(name password is_admin));
+        # TODO: process errors
+        my $task_id = db()->insert('tasks', $f);
+        redirect '/tasks';
+    };
+
+    any ['get', 'post'] => '/**' => sub {
+        my ($p) = splat();
+        my $id = shift @{$p};
+        if (@$p > 0) {
+            my $task = database()->quick_select('tasks', {id => $id});
+            return send_error("Not found", 404) unless ($task);
+            var task => $task;
+            var task_id => $id;
+            return pass
+        }
+        my $task = database()->quick_select('tasks_full', {id => $id});
+        $forms->{task} = $task;
+        template 'task' => { action => undef };
+    };
+
+    get '/*/edit' => sub {
+        my ($id) = splat();
+        unless (is_admin() || session('task')->{id} eq $id) {
+            return send_error("Not allowed", 403)
+        }
+        $forms->{task} = vars->{task};
+        template 'task' => { action => "/task/$id/edit" };
+    };
+
+    post '/*/edit' => sub {
+        my $id = vars->{task_id};
+        unless (is_admin() || session('task')->{id} eq $id) {
+            return send_error("Not allowed", 403)
+        }
+        my @p = is_admin() ? ('password', 'is_admin', 'company_id') :
+                              'password' ;
+        my $f = to_forms('task')->(@p);
+        db()->update('tasks', $f, $id);
+
+        $forms->{task} =
+            database()->quick_select('tasks', {id => $id});
+        template 'task' => { action => "/task/$id/edit" };
+    };
+
+    post '/*/delete' => admin_only sub {
+        db()->delete('tasks', vars->{task_id});
+        redirect '/tasks'
+    };
+
+};
+
+=cut comment
+
 any '/**' => sub { send_error('not found', 404) };
+
 
 
 1;
