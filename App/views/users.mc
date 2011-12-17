@@ -16,7 +16,7 @@
     <td>Name: 
         <a href="user/<% $u->{id} %>"><% $u->{name} %></a>
     </td>
-    <td>Is admin: 
+    <td>
       <% ['not admin', 'admin']->[$u->{is_admin} ? 1 : 0] %>
     </td>
     <td>Company: 

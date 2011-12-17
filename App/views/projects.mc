@@ -11,11 +11,13 @@
 % 
 % for my $u (@{$.projects}) { 
   <tr>
-    <td>id: <% $u->{id} %></td>
-    <td>Name: <% $u->{name} %></td>
+% #    <td>id: <% $u->{id} %></td>
+    <td>Name: 
+      <a href="project/<% $u->{id} %>"><% $u->{name} %>
+    </td>
     <td>Start date: <% $u->{start_date} %></td>
     <td>
-      <a href="project/<% $u->{id} %>">viev</a>
+      
     </td>
 %     if ($.user()->{is_admin}) {
     <td>

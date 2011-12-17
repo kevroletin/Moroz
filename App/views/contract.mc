@@ -8,6 +8,7 @@
 % $.curr_f->('contract');
 % my $contract_id = $.f->('id');
 % my @proj = $.db->quick_select('projects', {});
+% my @comp = $.db->quick_select('companies', {});
 
 % if (defined $.action) {
 
@@ -22,6 +23,17 @@
     <% $.f->('name') %>
 % }
     </p>
+    <p> Company:
+      <select name="company_id">
+% for (@comp){
+        <option value="<% $_->{id} %>"
+          <% (defined $.f->('company_id') && 
+              $_->{id} eq $.f->('company_id')) ? 'selected="selected"' : '' %>>
+          <% $_->{name} %>
+        </option>
+% }
+      </select>
+    </p>
     <p> Project:
       <select name="project_id">
 % for (@proj){
@@ -33,6 +45,12 @@
 % }
       </select>
     </p>
+    <p>
+      <input type="checkbox" name="is_active" value="true" 
+        <% $.f->('is_active') ? 'checked="checked"' : '' %> />
+        Active?
+    </p>
+
     
     <p>
       <input type="submit" name="ok" value="submit" />
@@ -42,39 +60,6 @@
 
 <hr />
 
-% if ($.user->{is_admin}) {
-%   $.curr_f->('contract');
-%   my $sub_q = 
-% "select company_id from company_contract_items " .
-% "  where contract_id = " . $.f->('id');
-%   my $q = 
-% "select * from companies where id not in ($sub_q)";
-%   print STDERR "********************\n$q\n";
-%   my $sth = $.db->prepare($q);
-%   $sth->execute();
-%   my @comp; 
-%   while(my $r = $sth->fetchrow_hashref()) { push @comp, $r };
-
-%   if (@comp) {
-<form method="post"
-      action="/contract/<% $.f->('id') %>/companies/add">
-  <p>Add new company:</p>
-  <p>
-    <select name="company_id">
-%     for (@comp) {
-     <option value="<% $_->{id} %>">
-      <% $_->{name} %>
-      </option>
-%     }
-    </select>
-    <input type="submit" name="ok" value="add" />
-  </p>
-</form>
-%   }
-
-% }
-
-
 % } else {
 % $.curr_f->('contract');
 
@@ -82,37 +67,21 @@
     <p> Name:
       <% $.f->('name') %>
     </p>
+    <p> Company: 
+      <a href="/company/<% $.f->('company_id') %>">
+        <% $.f->('company') %>
+      </a>
+    </p>
     <p> Project: 
       <a href="/project/<% $.f->('project_id') %>">
         <% $.f->('project') %>
       </a>
+    </p>
+    <p> 
+      <% $.f('is_active') ? 'active' : 'not active' %>
+    </p>
   </div>
 
 % }
 
-<p>Companies working on this contract:</p>
-<table>
-% my $q = 
-% "select * from company_contract_items " .
-% " join companies on company_id = id ".
-% "where contract_id = $contract_id";
-% my $sth = $.db->prepare($q);
-% $sth->execute();
-% while (my $r = $sth->fetchrow_hashref) {
-  <tr>
-    <td>Name: <a href='/company/<% $r->{company_id} %>'>
-        <% $r->{name} %>
-        </a>
-    </td>
-%   if ($.user()->{is_admin}) {
-    <td>
-        <form method="post" 
-              action="/contract/<% $contract_id %>/company/<% $r->{id} %>/delete" >
-          <input type="submit" value="remove" />
-        </form>
-    </td>
-%   }
 
-  </tr>
-% }
-</table>

@@ -63,9 +63,6 @@
     <p> Name:
       <% $.f->('name') %>
     </p>
-    <p> Password:
-      <% $.f->('password') %>
-    </p>
     <p>
       Admin? <% $.f->('is_admin') %>
     </p>

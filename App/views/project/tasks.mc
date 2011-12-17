@@ -2,10 +2,11 @@
     $.user
     $.tasks_sth
     $.project_id
+    $.is_manager
 </%args>
 % use Data::Dumper;
 
-% if ($.user()->{is_admin}) {
+% if ($.is_manager->()) {
 <a href="tasks/add">New task</a>
 % }
 

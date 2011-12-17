@@ -15,10 +15,18 @@
     <td>Name: <a href="contract/<% $u->{id} %>">
         <% $u->{name} %></a>
     </td>
+    <td>Company: 
+      <a href="/company/<% $u->{company_id} %>">
+        <% $u->{company} %>
+      </a>
+    </td>
     <td>Project: 
       <a href="/project/<% $u->{project_id} %>">
         <% $u->{project} %>
       </a>
+    </td>
+    <td>
+      <% $u->{'is_active'} ? 'active' : 'not active' %>
     </td>
 %     if ($.user()->{is_admin}) {
     <td>

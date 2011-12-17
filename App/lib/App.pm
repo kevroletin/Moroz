@@ -24,16 +24,21 @@ sub to_forms {
 sub from_forms { $forms->{$_[0]} }
 
 
+sub log_sql {
+    #    print "**********SQL: " . $_[0] || '' . "\n"
+    print "<pre>$_[0]</pre>"
+}
+
 sub set_current_form {
     $current_form = $_[0];
     $current_form ? "form_$current_form" : ''
 }
 
 sub get_from_current_form {
-    return $forms unless $_[0];
+    return $forms unless @_;
     if ($current_form) {
         my $cf = $forms->{$current_form};
-        return $cf ? $cf->{$_[0]} : ''
+        return defined $cf ? $cf->{$_[0]} : ''
     }
 }
 
@@ -43,19 +48,34 @@ sub admin_only {
     my $s = shift;
     sub {
         unless (session('user')->{is_admin}) {
-            return send_error("Not allowed", 403)
+            return send_error("Not admin", 403)
         }
         $s->(@_);
     }
 }
 
-sub is_manager { # TODO:
+sub is_manager {
+    my $projext_id = vars->{project_id};
+    my $user_id = session('user_id');
+    my $q = <<SQL
+select $user_id in (
+  select user_id from user_project_items 
+  where project_id = $projext_id
+)
+SQL
+        ;
+    log_sql($q);
+    my $sth = database->prepare($q);
+    $sth->execute();
+    $sth->fetchrow_array();
 }
 
 sub manager_only {
     my $s = shift;
     sub {
-        # TODO:
+        unless (is_manager()) {
+            return send_error("Not manager on this project", 403)
+        }
         $s->(@_);
     }
 }
@@ -82,6 +102,8 @@ hook 'before_template' => sub {
     $t->{curr_f} = \&set_current_form;
     $t->{f} = \&get_from_current_form;
     $t->{db} = database();
+    $t->{log_sql} = \&log_sql;
+    $t->{is_manager} = \&is_manager;
 };
 
 get '/' => sub {
@@ -143,7 +165,7 @@ prefix '/user' => sub {
     };
 
     post 's/add' => admin_only sub {
-        my $f = to_forms('user')->(qw(name password is_admin));
+        my $f = to_forms('user')->(qw(name password is_admin company_id));
         # TODO: process errors
         my $user_id = db()->insert('users', $f);
         redirect '/users';
@@ -308,8 +330,19 @@ prefix '/project' => sub {
     };
 
     get '/*/companies' => sub {
-        my ($id) = splat;
-        # TODO:
+        my ($project_id) = splat;
+        my $q = <<SQL
+select * from companies where id in (
+  select company_id from contracts
+  where project_id = $project_id
+)
+SQL
+;
+        my $sth = database()->prepare($q);
+        $sth->execute();
+        my @comp;
+        while(my $r = $sth->fetchrow_hashref()) { push @comp, $r };
+        template 'companies' => { companies => \@comp };
     };
 
     get '/*/tasks' => sub {
@@ -323,17 +356,17 @@ prefix '/project' => sub {
         }
     };
 
-    get '/*/tasks/add' => sub {
+    get '/*/tasks/add' => manager_only sub {
         my ($project_id) = splat;
         delete $forms->{task};
-        template 'project/task' => {
+        template 'project/task_add' => {
             action => "add",
             project_id => $project_id,
             project => vars->{project}
         }
     };
 
-    post '/*/tasks/add' => sub {
+    post '/*/tasks/add' => manager_only sub {
         my ($project_id) = splat;
         my $f = to_forms('task')->('name', 'estimate_time');
         $f->{project_id} = $project_id;
@@ -402,6 +435,38 @@ prefix '/project' => sub {
         redirect "project/$project_id/tasks";
     };
 
+    post '/*/task/*/link' => manager_only sub {
+        my ($project_id, $task_id) = splat;
+        my $another_task_id = param('another_task_id');
+        my $sth = database()->prepare("insert into task_dependences values (?, ?)");
+        if (param('link_type') eq 'blocked_by') {
+            $sth->execute($another_task_id, $task_id)
+        } else {
+            $sth->execute($task_id, $another_task_id)
+        }
+        redirect "project/$project_id/task/$task_id/edit";
+    };
+
+    post '/*/task/*/unlink' => manager_only sub {
+        my ($project_id, $task_id) = splat;
+        my $another_task_id = param('another_task_id');
+        my $sth = database()->prepare("delete from task_dependences " .
+                                      "where blocking_task_id = ? and depended_task_id = ?");
+        if (param('link_type') eq 'blocked_by') {
+            $sth->execute($another_task_id, $task_id)
+        } else {
+            $sth->execute($task_id, $another_task_id)
+        }
+        redirect "project/$project_id/task/$task_id/edit";
+    };
+
+    get '/*/users' => sub {
+        my ($project_id) = splat;
+        template 'project/users' => {
+            project_id => $project_id
+        }
+    };
+
     post '/*/users/add' => admin_only sub {
         my ($project_id) = splat;
         my $f = to_forms('user_project_item')->('role', 'user_id');
@@ -433,10 +498,12 @@ prefix '/contract' => sub {
     };
 
     post 's/add' => admin_only sub {
-        my $f = to_forms('contract')->(qw(name));
+        my $f = to_forms('contract')->(
+                      qw(name company_id project_id));
         # TODO: process errors
         my $contract_id = db()->insert('contracts', $f);
-        redirect "/contract/$contract_id/edit";
+         redirect "/contracts"
+#        redirect "/contract/$contract_id/edit";
     };
 
     any ['get', 'post'] => '/**' => sub {
@@ -465,7 +532,8 @@ prefix '/contract' => sub {
 
     post '/*/edit' => admin_only sub {
         my $id = vars->{contract_id};
-        my $f = to_forms('contract')->('project_id');
+        my $f = to_forms('contract')->(
+                  'project_id', 'company_id', 'is_active');
         db()->update('contracts', $f, $id);
 
         $forms->{contract} =
@@ -477,6 +545,8 @@ prefix '/contract' => sub {
         db()->delete('contracts', vars->{contract_id});
         redirect '/contracts'
     };
+
+=begin comment
 
     post '/*/companies/add' => admin_only sub {
         my ($contract_id) = splat;
@@ -504,6 +574,8 @@ prefix '/contract' => sub {
             company => vars->{company}
         };
     };
+
+=cut comment
 
 };
 
