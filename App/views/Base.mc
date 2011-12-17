@@ -14,18 +14,28 @@
 </head>
 <body>
 
-<div>
+<div style="float: right">
 % print( $.user ? $.user->{name} : 'not logined' );
 % # <p><pre>
 % #  use Data::Dumper; print Dumper $.user;
 % # </pre></p>
+  <a href="/logout">logout</a>
 </div>
 
+
+<div>
+  <a href="/companies">companies</a>
+  <a href="/contracts">contracts</a>
+  <a href="/projects">projects</a>
+  <a href="/users">users</a>
+</div>
+
+<hr />
 
 <% inner() %>
 
 <div id="footer">
-Powered by <a href="http://perldancer.org/">Dancer</a> 
+<!-- Powered by <a href="http://perldancer.org/">Dancer</a> -->
 </div>
 </body>
 </html>

@@ -269,22 +269,19 @@ prefix '/project' => sub {
         return send_error("Not found", 404) unless ($comp);
         var project => $comp;
         var project_id => $id;
-        if (@$p > 0) {
-            return send_error("Not allowed", 403) unless is_admin();
-            return pass
-        }
+        return pass if @$p > 0;
 
         $forms->{project} = $comp;
         template 'project' => { action => undef };
     };
 
-    get '/*/edit' => sub {
+    get '/*/edit' => admin_only sub {
         my ($id) = splat();
         $forms->{project} = vars->{project};
         template 'project' => { action => "/project/$id/edit" };
     };
 
-    post '/*/edit' => sub {
+    post '/*/edit' => admin_only sub {
         my $id = vars->{project_id};
         my $f = to_forms('project')->('description');
         db()->update('projects', $f, $id);
@@ -299,8 +296,123 @@ prefix '/project' => sub {
         redirect '/projects'
     };
 
+    get '/*/companies' => sub {
+        my ($id) = splat;
+        # TODO:
+    };
+
+    get '/*/tasks' => sub {
+        my ($id) = splat;
+        # TODO:
+    };
+
+    get '/*/users' => sub {
+        my ($id) = splat;
+        template 'project/users' => {
+           project => vars->{project},
+           project_id => vars->{project_id}
+        }
+    };
+
+    post '/*/users/add' => admin_only sub {
+        my ($project_id) = splat;
+        my $f = to_forms('user_project_item')->('role', 'user_id');
+        $f->{project_id} = $project_id;
+        database()->quick_insert('user_project_items', $f);
+        redirect "project/$project_id/users";
+    };
+
+    post '/*/users/delete' => admin_only sub {
+        my ($project_id) = splat;
+        my $f = { project_id => $project_id,
+                  user_id => param('user_id') };
+        database()->quick_delete('user_project_items', $f);
+        redirect "project/$project_id/users";
+    };
+
 };
 
+prefix '/contract' => sub {
+
+    get 's' => sub {
+        my @q = database()->quick_select('contracts_full', {});
+        template 'contracts' => { contracts => \@q };
+    };
+
+    get 's/add' => admin_only sub {
+        delete $forms->{contract};
+        template 'contract_add' => { action => '/contracts/add' };
+    };
+
+    post 's/add' => admin_only sub {
+        my $f = to_forms('contract')->(qw(name));
+        # TODO: process errors
+        my $contract_id = db()->insert('contracts', $f);
+        redirect "/contract/$contract_id/edit";
+    };
+
+    any ['get', 'post'] => '/**' => sub {
+        my ($p) = splat();
+        my $id = shift @{$p};
+        my $comp = database()->quick_select('contracts', {id => $id});
+        return send_error("Not found", 404) unless ($comp);
+        var contract => $comp;
+        var contract_id => $id;
+        return pass if @$p > 0;
+
+        $forms->{contract} = $comp;
+        template 'contract' => { action => undef };
+    };
+
+    get '/*/edit' => admin_only sub {
+        my ($id) = splat();
+        $forms->{contract} = vars->{contract};
+        template 'contract' => { action => "/contract/$id/edit" };
+    };
+
+    post '/*/edit' => admin_only sub {
+        my $id = vars->{contract_id};
+        my $f = to_forms('contract')->('project_id');
+        db()->update('contracts', $f, $id);
+
+        $forms->{contract} =
+            database()->quick_select('contracts', {id => $id});
+        template 'contract' => { action => "/contract/$id/edit" };
+    };
+
+    post '/*/delete' => admin_only sub {
+        db()->delete('contracts', vars->{contract_id});
+        redirect '/contracts'
+    };
+
+    post '/*/companies/add' => admin_only sub {
+        my ($contract_id) = splat;
+        my ($company_id) = param('company_id');
+        database()->quick_insert('company_contract_items',
+                                 {company_id => $company_id,
+                                  contract_id => $contract_id});
+        redirect "/contract/$contract_id/edit"
+    };
+
+    post '/*/company/*/delete' => admin_only sub {
+        my ($contract_id, $company_id) = splat;
+        database()->quick_delete('company_contract_items',
+                                 {company_id => $company_id,
+                                  contract_id => $contract_id});
+        redirect "/contract/$contract_id/edit"
+    };
+
+    get '/*/company/*/users' => sub {
+        my ($contract_id, $company_id) = splat;
+        my $company = database()->quick_select(
+                          'companies', {id => $company_id});
+        template 'contract/company/users' => {
+            contract => vars->{contract},
+            company => vars->{company}
+        };
+    };
+
+};
 
 any '/**' => sub { send_error('not found', 404) };
 
