@@ -18,40 +18,58 @@
   <form id="<% $.curr_f->('project') %>"
         method="post"
         action="<% $.action %>" >
-    <p> Name:
-
+    <table class="edit">
+    <tr>
+      <th>Name:</th>
+      <td>
 % if ($.action eq '/projects/add') {
       <input type="text" name="name" value="<% $.f->('name') %>" />
 % } else {
     <% $.f->('name') %>
 % }
-    </p>
+      </td>
+    </tr>
 % if ($.action ne '/projects/add') {
-    <p> Start date: <% $.f->('start_date') %> </p>
+    <tr>
+      <th>Start date:</th>
+      <td><% $.f->('start_date') %></td>
+    </tr>
 % }
-    <p> Description:
+    <tr>
+      <th>Description:</th>
+      <td>
         <textarea name="description"/
           ><% $.f->('description') %></textarea>
-    </p>
-    <p>
-      <input type="submit" name="ok" value="submit" />
-    </p>
-
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <input type="submit" name="ok" value="submit" />
+      </td>
+    </tr>
+    </table>
   </form>
 
 % } else {
 % $.curr_f->('project');
 
+<h1>View project</h1>
+
   <div>
-    <p> Name:
-      <% $.f->('name') %>
-    </p>
-    <p> Start date:
-      <% $.f->('start_date') %>
-    </p>
-    <p> Description:
-      <% $.f->('description') %>
-    </p>
+    <table class="edit">
+    <tr>
+      <th>Name:</th>
+      <td><% $.f->('name') %></td>
+    </tr>
+    <tr>
+      <th>Start date:</th>
+      <td><% $.f->('start_date') %></td>
+    </tr>
+    <tr>
+      <th>Description:</th>
+      <td><% $.f->('description') %></td>
+    </tr>
+    </table>
   </div>
 
 % }

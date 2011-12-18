@@ -630,7 +630,7 @@ prefix '/contract' => sub {
 
     get 's/add' => admin_only sub {
         delete $forms->{contract};
-        template 'contract_add' => { action => '/contracts/add' };
+        template 'contract' => { action => '/contracts/add' };
     };
 
     post 's/add' => admin_only sub {

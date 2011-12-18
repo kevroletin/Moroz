@@ -6,37 +6,46 @@
     $.db
 </%args>
 
-<a href="/users">Users list</a>
-
 % if (defined $.action) {
 % my @comp = $.db->quick_select('companies', {});
+
+<h1><% $.action eq '/users/add' ? 'Add' : 'Edit' %> user</h1>
 
   <form id="<% $.curr_f->('user') %>"
         method="post"
         action="<% $.action %>" >
-    <p> Name:
-
+    <table class="edit">
+    <tr>
+      <th>Name:</th>
+      <td>
 % if ($.action eq '/users/add') {
       <input type="text" name="name" value="<% $.f->('name') %>" />
 % } else {
     <% $.f->('name') %>
 % }
-
-    </p>
-    <p> Password:
-      <input type="text" name="password" value="<% $.f->('password') %>" />
-    </p>
-    <p>
-      Admin?
+      </td>
+    </tr>
+    <tr>
+      <th>Password:</th>
+      <td>
+        <input type="text" name="password" value="<% $.f->('password') %>" />
+      </td>
+    </tr>
+    <tr>
+      <th>Admin:</th>
+      <td>
 % if ($.user->{is_admin}) {
       <input type="checkbox" name="is_admin" value="true" 
              <% $.f->('is_admin') ? 'checked="1"' : ''  %> />
 % } else {
         <% $.f->('is_admin') ? 'yes' : 'no'  %>
 % }
-    </p>
-    <p>Company:
-      <select name="company_id">
+      </td>
+    </tr>
+    <tr>
+      <th>Company:</th>
+      <td>
+        <select name="company_id">
 % unless (defined $.f->('company_id')) {
         <option value=""></option>
 % }
@@ -48,28 +57,38 @@
         </option>
 % }
       </select>
-    </p>
-
-    <p>
-      <input type="submit" name="ok" value="submit" />
-    </p>
-
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <input type="submit" name="ok" value="submit" />
+      </td>
+    </tr>
+    </table>
   </form>
 
 % } else {
 % $.curr_f->('user');
 
-  <div>
-    <p> Name:
-      <% $.f->('name') %>
-    </p>
-    <p>
-      Admin? <% $.f->('is_admin') %>
-    </p>
-    <p>
-      Company: <% $.f->('company') %>
-    </p>
+<h1>View user</h1>
 
-  </div>
+<table class="edit">
+  <tr>
+    <th>Name:</th>
+    <td><% $.f->('name') %></td>
+  </tr>
+  <tr>
+    <th>Permissions:</th> 
+    <td><% $.f->('is_admin') ? 'admin' : 'not admin' %></td>
+  </tr>
+  <tr>
+    <th>Company:</th>
+    <td>
+      <a href="/company/<% $.f->('company_id') %>">
+        <% $.f->('company') %>
+      </a>
+    </td>
+  </tr>
+</table>
 
 % }

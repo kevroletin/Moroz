@@ -1,0 +1,64 @@
+.header_filler {
+    background-color: black;
+    height: 5px;
+}
+
+#header {
+    height: 10px;
+}
+
+#content {   
+    padding: 0;
+    margin: 0 auto;
+    width: 95%;
+}
+
+table.list th {
+    padding: 3px 8px;
+    color: black;
+    font-weight: 600;
+}
+
+table.list td {
+    padding: 3px 8px;
+}
+
+table.list tr.even td{
+    background-color: #E7E7E7;
+}
+
+table.list tr.odd td {
+}
+
+table.list td.first {
+    border-bottom-left-radius: 6px;
+    border-top-left-radius: 6px;
+}
+
+table.list td.last {
+    border-bottom-right-radius: 6px;
+    border-top-right-radius: 6px;
+}
+
+table.edit {
+    background-color: #E7E7E7;
+    border-radius: 6px;
+}
+
+table.edit th {
+    padding: 8px;
+    color: black;
+    font-weight: 600;
+}
+
+table.edit td {
+    padding: 8px;
+    color: black;
+}
+
+.toolbar_login {
+    float: right;
+}
+
+input {
+}
