@@ -42,11 +42,12 @@ sub update {
     }
     my $q =
         'update ' . $table . ' set ' . (join ', ', @expr) .
-        ' where id = ?';
+        ' where id = ? returning *';
     my $sth = database()->prepare($q);
     debug( "********** SQL **********:  ", $q, "\n",
            {id => $id, args => \@v}, "\n" );
     $sth->execute(@v, $id);
+    $sth->fetchrow_hashref();
 }
 
 sub delete {

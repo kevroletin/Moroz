@@ -48,7 +48,14 @@ SQL
         ;
     $.log_sql->($q);
     my $tasks_depended_sth = $.db->prepare($q);
+
+    $.curr_f->('task');
+    my $base_path = '/project/' . $.project_id . '/task/' . $.f->('id');
 </%init>
+
+<a href="<% $base_path %>/activities">
+  Activities on this task
+</a>
 
 % if (defined $.action) {
 

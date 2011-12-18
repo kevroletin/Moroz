@@ -25,8 +25,9 @@ sub from_forms { $forms->{$_[0]} }
 
 
 sub log_sql {
-    #    print "**********SQL: " . $_[0] || '' . "\n"
-    print "<pre>$_[0]</pre>"
+     print STDERR "**********SQL: " . $_[0] || '' . "\n";
+     print "<pre>$_[0]</pre>";
+     $_[0]
 }
 
 sub set_current_form {
@@ -35,7 +36,7 @@ sub set_current_form {
 }
 
 sub get_from_current_form {
-    return $forms unless @_;
+    return $forms unless defined $_[0];
     if ($current_form) {
         my $cf = $forms->{$current_form};
         return defined $cf ? $cf->{$_[0]} : ''
@@ -54,6 +55,21 @@ sub admin_only {
     }
 }
 
+sub role {
+    my $projext_id = vars->{project_id};
+    my $user_id = session('user_id');
+    my $q = <<SQL
+select role from user_project_items 
+  where project_id = $projext_id
+  and user_id = $user_id
+SQL
+        ;
+    log_sql($q);
+    my $sth = database->prepare($q);
+    $sth->execute();
+    $sth->fetchrow_array() || undef;
+}
+
 sub is_manager {
     my $projext_id = vars->{project_id};
     my $user_id = session('user_id');
@@ -68,6 +84,17 @@ SQL
     my $sth = database->prepare($q);
     $sth->execute();
     $sth->fetchrow_array();
+}
+
+sub works_on_project_only {
+    my $s = shift;
+    sub {
+        var role => role();
+        unless (defined vars->{role}) {
+            return send_error("Not works on this project", 403)
+        }
+        $s->(@_);
+    }
 }
 
 sub manager_only {
@@ -104,6 +131,7 @@ hook 'before_template' => sub {
     $t->{db} = database();
     $t->{log_sql} = \&log_sql;
     $t->{is_manager} = \&is_manager;
+    $t->{role} = \&role;
 };
 
 get '/' => sub {
@@ -203,10 +231,8 @@ prefix '/user' => sub {
         my @p = is_admin() ? ('password', 'is_admin', 'company_id') :
                               'password' ;
         my $f = to_forms('user')->(@p);
-        db()->update('users', $f, $id);
+        $forms->{user} = db()->update('users', $f, $id);
 
-        $forms->{user} =
-            database()->quick_select('users', {id => $id});
         template 'user' => { action => "/user/$id/edit" };
     };
 
@@ -261,10 +287,8 @@ prefix '/compan' => sub {
     post 'y/*/edit' => sub {
         my $id = vars->{company_id};
         my $f = to_forms('company')->('name');
-        db()->update('companies', $f, $id);
+        $forms->{company} = db()->update('companies', $f, $id);
 
-        $forms->{company} =
-            database()->quick_select('companies', {id => $id});
         template 'company' => { action => "/company/$id/edit" };
     };
 
@@ -317,10 +341,8 @@ prefix '/project' => sub {
     post '/*/edit' => admin_only sub {
         my $id = vars->{project_id};
         my $f = to_forms('project')->('description');
-        db()->update('projects', $f, $id);
+        $forms->{project} = db()->update('projects', $f, $id);
 
-        $forms->{project} =
-            database()->quick_select('projects', {id => $id});
         template 'project' => { action => "/project/$id/edit" };
     };
 
@@ -419,9 +441,8 @@ SQL
     post '/*/task/*/edit' => manager_only sub {
         my ($project_id, $task_id) = splat;
         my $f = to_forms('task')->('estimate_time', 'is_active');
-        database()->quick_update('tasks', { id => $task_id},  $f);
-        $forms->{task} = database()->quick_select(
-                                         'tasks', {id => $task_id});
+        $forms->{task} = db()->update('tasks', $f, $task_id);
+
         template 'project/task' => {
             action => "edit",
             project_id => $project_id,
@@ -459,6 +480,121 @@ SQL
         }
         redirect "project/$project_id/task/$task_id/edit";
     };
+
+    get '/*/task/*/activities' => sub {
+        my ($project_id, $task_id) = splat;
+        my $q = "select * from activity_on_task_full where task_id = $task_id";
+        my $sth = database()->prepare($q);
+        $sth->execute();
+        my @act;
+        while (my $u = $sth->fetchrow_hashref()) { push @act, $u }
+        template "project/task/activities" => {
+            activities => \@act,
+            project_id => $project_id,
+            task_id => $task_id,
+            role => role()
+        }
+    };
+
+    get '/*/task/*/activities/add' => works_on_project_only sub {
+        my ($project_id, $task_id) = splat;
+        template "project/task/activity_add" => {
+            project_id => $project_id,
+            task_id => $task_id,
+            role => vars->{role}
+        }
+    };
+
+    post '/*/task/*/activities/add' => works_on_project_only sub {
+        my ($project_id, $task_id) = splat;
+        my $f = to_forms('activity')->(
+                    qw(name description user_project_item_id));
+        $f->{task_id} = $task_id;
+        db()->insert('activity_on_task', $f);
+        redirect "/project/$project_id/task/$task_id/activities"
+    };
+
+    any ['get', 'post'] => '/*/task/*/activity/**' => sub {
+        my ($project_id, $task_id, $p) = splat;
+        my $activity_id = shift $p;
+        var activity_id => $activity_id;
+        my $act = database()->quick_select(
+                    'activity_on_task_full', { id => $activity_id});
+        send_error("Activity not found", 404) unless $act;
+        var activity => $act;
+
+        my $user_id = session('user_id');
+        my $sth = database()->prepare( log_sql <<SQL
+select $user_id in (
+  select user_id from user_project_items
+  where id = $act->{user_project_item_id}
+)
+SQL
+);      $sth->execute();
+        my $can_modify = $sth->fetchrow_array();
+        $can_modify ||= is_manager();
+        var can_modify_activity => $can_modify;
+
+        if (@$p) {
+            unless ($can_modify) {
+                return send_error('Not allowed', 403)
+            }
+            return pass
+        }
+
+        $forms->{activity} = vars->{activity};
+        template "project/task/activity" => {
+            project_id => $project_id,
+            task_id => $task_id,
+            can_modify => $can_modify
+        }
+    };
+
+    get '/*/task/*/activity/*/edit' => sub {
+        my ($project_id, $task_id, $act_id) = splat;
+        $forms->{activity} = vars->{activity};
+        template "project/task/activity" => {
+            project_id => $project_id,
+            task_id => $task_id,
+            can_modify => vars->{can_modify_activity},
+            action => 'edit'
+        }
+    };
+
+    post '/*/task/*/activity/*/edit' => sub {
+        my ($project_id, $task_id, $act_id) = splat;
+        my $f = to_forms('activity')->(qw(description));
+
+        $forms->{activity} = db()->update('activity_on_task',
+                                          $f, $act_id);
+        redirect "/project/$project_id/task/$task_id/activity/$act_id/edit";
+    };
+
+    post '/*/task/*/activity/*/open' => sub {
+        my ($project_id, $task_id, $act_id) = splat;
+        my $sth = database()->prepare( log_sql <<SQL
+update activity_on_task set finish_time = null
+where id = $act_id
+SQL
+);      $sth->execute();
+
+        redirect "/project/$project_id/task/$task_id/activity/$act_id"
+    };
+
+    post '/*/task/*/activity/*/close' => sub {
+        my ($project_id, $task_id, $act_id) = splat;
+        my $sth = database()->prepare( log_sql <<SQL
+update activity_on_task set finish_time = current_timestamp
+where id = $act_id
+SQL
+);      $sth->execute();
+
+        redirect "/project/$project_id/task/$task_id/activity/$act_id"
+    };
+
+#    post '/*/task/*/activity/*/delete' => sub {
+#        return 'TODO'
+#    };
 
     get '/*/users' => sub {
         my ($project_id) = splat;
@@ -534,10 +670,8 @@ prefix '/contract' => sub {
         my $id = vars->{contract_id};
         my $f = to_forms('contract')->(
                   'project_id', 'company_id', 'is_active');
-        db()->update('contracts', $f, $id);
+        $forms->{contract} = db()->update('contracts', $f, $id);
 
-        $forms->{contract} =
-            database()->quick_select('contracts', {id => $id});
         template 'contract' => { action => "/contract/$id/edit" };
     };
 

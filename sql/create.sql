@@ -103,4 +103,18 @@ select c.*, projects.name as project, companies.name as company from contracts c
   left join projects on project_id = projects.id
   left join companies on company_id = companies.id;
 
+create view user_project_items_full  as
+  select user_project_items.*, users.name as user 
+  from user_project_items
+  left join users on user_id = users.id;
+
+create view activity_on_task_full as
+  select activity_on_task.*, 
+         users.name as user,
+         users.id as user_id
+  from activity_on_task 
+    join user_project_items 
+      on user_project_item_id = user_project_items.id
+    join users on user_project_items.user_id = users.id;
+
 /* COMMIT; */
