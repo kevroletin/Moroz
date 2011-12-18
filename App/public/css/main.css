@@ -14,13 +14,13 @@
 }
 
 table.list th {
-    padding: 3px 8px;
+    padding: 5px 8px;
     color: black;
     font-weight: 600;
 }
 
 table.list td {
-    padding: 3px 8px;
+    padding: 5px 8px;
 }
 
 table.list tr.even td{
@@ -60,5 +60,14 @@ table.edit td {
     float: right;
 }
 
-input {
+div.message_box {
+    padding: 10px;
+}
+
+div.message {
+    color: green;
+}
+
+div.error {
+    color: red;
 }

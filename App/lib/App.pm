@@ -25,8 +25,8 @@ sub from_forms { $forms->{$_[0]} }
 
 
 sub log_sql {
-     print STDERR "**********SQL: " . $_[0] || '' . "\n";
-     print "<pre>$_[0]</pre>";
+#     print STDERR "**********SQL: " . $_[0] || '' . "\n";
+#     print "<pre>$_[0]</pre>";
      $_[0]
 }
 
@@ -374,7 +374,8 @@ SQL
         $sth->execute();
         template "/project/tasks" => {
             tasks_sth => $sth,
-            project_id => $id
+            project_id => $id,
+            project => vars->{project}
         }
     };
 
@@ -424,8 +425,7 @@ SQL
         template 'project/users' => {
            project => vars->{project},
            project_id => vars->{project_id}
-    };
-
+        }
     };
 
     get '/*/task/*/edit' => manager_only sub {

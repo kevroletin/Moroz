@@ -10,6 +10,7 @@
     $.is_manager
 </%args>
 <%init>
+    use App::Utils;
     use Data::Dumper;
 
     my $is_manager = $.is_manager->();
@@ -59,50 +60,69 @@ SQL
 
 % if (defined $.action) {
 
+<h1>Edit task</h1>
 
-  <form id="<% $.curr_f->('task') %>"
+<form id="<% $.curr_f->('task') %>"
         method="post"
         action="<% '/project/' . $.project_id . '/task/' . $.f->('id'). '/edit' %>" >
-    <p> Name:
-      <% $.f->('name') %>
-    </p>
-    <p> Estimate time: 
-      <input type="text" name="estimate_time" value="<% $.f->('estimate_time') %>" /> 
-    </p>
-
-    <p>
-      <input type="checkbox" name="is_active" value="true" 
+    <table class="edit">
+    <tr>
+      <th>Name:</th>
+      <td><% $.f->('name') %></td>
+    </tr>
+    <tr>
+      <th>Estimate time:</th>
+      <td>
+        <input type="text" name="estimate_time" value="<% $.f->('estimate_time') %>" /> 
+      </td>
+    </tr>
+    <tr>
+      <th>Active</th>
+      <td>
+        <input type="checkbox" name="is_active" value="true" 
              <% $.f->('is_active') ? 'checked="1"' : '' %> />
-      Is active
-    </p>
-    <p>
-      <input type="submit" name="ok" value="submit" />
-    </p>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <input type="submit" name="ok" value="submit" />
+      </td>
+    </tr>
+    </table>
 
   </form>
 
 % } else {
 % $.curr_f->('task');
 
-  <div>
-    <p> Name:
-      <% $.f->('name') %>
-    </p>
-    <p> Estimate time:
-      <% $.f->('estimate_time') %>
-    </p>
-    <p> 
+<h1>View task</h1>
+
+<table class="edit">
+  <tr>
+    <th>Name:</th>
+    <td><% $.f->('name') %></td>
+  </tr>
+  <tr>
+    <th>Estimate time:</th>
+    <td><% $.f->('estimate_time') %></td>
+  </tr>
+  <tr>
+    <th>Status</th>
+    <td>
       <% $.f->('is_active') ? 'avtive' : 'not active' %>
-    </p>
-  </div>
+    </td>
+  </tr>
+</table>
 
 % }
 
-<h4>Blocks</h4>
-<table>
+<br />
+<h2>Blocks</h2>
+<table class="list">
+% my $i = 0;
 % $tasks_depended_sth->execute();
 % while (my $u = $tasks_depended_sth->fetchrow_hashref()) {
-  <tr>
+  <tr class="<% even_odd($i++) %>">
     <td>
       <a href="/project/<% $.project_id %>/task/<% $u->{id} %>">
         <% $u->{name} %>
@@ -121,23 +141,27 @@ SQL
 % }
 </table>
 
+% if ($.action && $.action eq 'edit') {
 <form id="link_task" method="post" 
       action="/project/<% $.project_id %>/task/<% $task_id %>/link">
   <input type="hidden" name="link_type" value="blocks" />
   <select name="another_task_id">
-% for my $u (@tasks) { 
+%   for my $u (@tasks) { 
    <option value="<% $u->{id} %>"><% $u->{name} %></option>
-% }
+%   }
   </select>
   <input type="submit" value="link" />
 </form>
+% }
 
 
-<h4>Blocked by</h4>
-<table>
+<br />
+<h2>Blocked by</h2>
+<table class="list">
+% my $i = 0;
 % $tasks_blokers_sth->execute();
 % while (my $u = $tasks_blokers_sth->fetchrow_hashref()) {
-  <tr>
+  <tr class="<% even_odd($i++) %>">
     <td>
       <a href="/project/<% $.project_id %>/task/<% $u->{id} %>">
         <% $u->{name} %>
@@ -156,13 +180,15 @@ SQL
 % }
 </table>
 
+% if ($.action && $.action eq 'edit') {
 <form id="link_task" method="post" 
       action="/project/<% $.project_id %>/task/<% $task_id %>/link">
   <input type="hidden" name="link_type" value="blocked_by" />
   <select name="another_task_id">
-% for my $u (@tasks) { 
+%   for my $u (@tasks) { 
    <option value="<% $u->{id} %>"><% $u->{name} %></option>
-% }
+%   }
   </select>
   <input type="submit" value="link" />
 </form>
+% }

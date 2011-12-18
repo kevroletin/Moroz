@@ -7,6 +7,7 @@
     $.role
 </%args>
 <%init>
+    use App::Utils;
     use Data::Dumper;
     
     my $base_path = "/project/" . $.project_id . "/task/" . $.task_id;
@@ -16,23 +17,33 @@
 <a href="<% $base_path %>/activities/add">New activity</a>
 % }
 
-<table>
-% 
+<h1>Activities on current task</h1>
+
+<table class="list">
+  <tr>
+    <th>Name</th>
+    <th>User</th>
+    <th>Started</th>
+    <th>Finished</th>
+  </tr>
+
+
+% my $i = 0;
 % my $activities = $.activities;
 % for my $u (@$activities) { 
-  <tr>
+  <tr class="<% even_odd($i++) %>">
 % #    <td>id: <% $u->{id} %></td>
-    <td>Name: 
-        <a href="<% $base_path %>/activity/<% $u->{id} %>"><% $u->{name} %></a>
+    <td>
+      <a href="<% $base_path %>/activity/<% $u->{id} %>"><% $u->{name} %></a>
     </td>
-    <td>User: 
+    <td>
       <a href="/user/<% $u->{user_id} %>">
         <% $u->{user} %>
       </a>
     </td>
-    <td>Started: <% $u->{start_time} %>
+    <td><% $u->{start_time}  =~ /(.*)\./, $1 %>
     </td>
-    <td>Finished: <% $u->{finish_time} %>
+    <td><% $u->{finish_time} ? ($u->{finish_time} =~ /(.*)\./, $1) : '' %>
     </td>
     <td>
     </td>

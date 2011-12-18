@@ -23,24 +23,35 @@ SQL
 
 <form id="activity" method="post"
       action="<% $base_path %>/activities/add" >
-  
-  <p> Name:
-    <input type="text" name="name" />
-  </p>
-  <p> Desctiption:
-    <textarea name="description"></textarea>
-  </p>
-  <p>Assigned to:
-    <select name="user_project_item_id">
+  <table class="edit">
+    <tr>
+      <th>Name</th>
+      <td>
+        <input type="text" name="name" />
+      </td>
+    </tr>
+    <tr>
+      <th>Desctiption:</th>
+      <td>
+        <textarea name="description"></textarea>
+      </td>
+    </tr>
+    <tr>
+      <th>Assigned to:</th>
+      <td>
+        <select name="user_project_item_id">
 %  while (my $u = $users_sth->fetchrow_hashref()) {
-      <option value="<% $u->{id} %>"><% $u->{user} %></option>
+          <option value="<% $u->{id} %>"><% $u->{user} %></option>
 %  }
-    </select>
-  </p>
-
-  <p>
-    <input type="submit" name="ok" value="submit" />
-  </p>
+       </select>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <input type="submit" name="ok" value="submit" />
+      </td>
+    </tr>
+    </table>
   
 </form>
 

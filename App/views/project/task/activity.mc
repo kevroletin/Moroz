@@ -15,8 +15,30 @@
     my $base_path = "/project/" . $.project_id . "/task/" . $.task_id;
 </%init>
 
-<a href="<% $base_path %>/activities">All activities</a>
+<h1><% defined $.action ? 'Edit' : 'View' %> activity on task</h1>
 
+% $.curr_f->('activity');
+
+<table class="edit">
+  <tr>
+    <th>Name:</th>
+    <td><% $.f->('name') %></td>
+  </tr>
+  <tr>
+    <th>User:</th>
+    <td>
+      <a href="/user/<% $.f->('user_id') %>">
+        <% $.f->('user') %>
+      </a>
+    </td>
+  </tr>
+  <tr>
+    <th>Started:</th>
+    <td><% $.f->('start_time') =~ /(.*)\./, $1 %></td>
+  </tr>
+  <tr>
+    <th>Finished:</th>
+    <td><% $.f->('finish_time') ? ($.f->('finish_time') =~ /(.*)\./, $1) : '' %>
 % if ($.can_modify) {
 % $.curr_f->('activity');
 % my $change_type = defined $.f->('finish_time') ? 'open' : 'close';
@@ -26,44 +48,27 @@
          value="<% $change_type %>" />
 </form>
 % }
+    </td>
+  </tr>
 
-% $.curr_f->('activity');
 
-  <div>
-    <p> Name:
-      <% $.f->('name') %>
-    </p>
-    <p>User: 
-      <a href="/user/<% $.f->('user_id') %>">
-        <% $.f->('user') %>
-      </a>
-    </p>
-    <p>Started: <% $.f->('start_time') %>
-    </p>
-    <p>Finished: <% $.f->('finish_time') %>
 
+  <tr>
+    <th>Desctiption:</th>
+    <td>
 % if (defined $.action) {
-
-  <form id="<% $.curr_f->('activity') %>"
-        method="post"
-        action="<% $base_path %>/activity/<% $.f->('id') %>/edit" >
-  <p> Desctiption:
-    <textarea name="description"
-      ><% $.f->('description') %></textarea>
-  </p>
-    <p>
-      <input type="submit" name="ok" value="submit" />
-    </p>
-
-  </form>
-
+      <form id="<% $.curr_f->('activity') %>"
+            method="post"
+            action="<% $base_path %>/activity/<% $.f->('id') %>/edit" >
+        <textarea name="description"
+          ><% $.f->('description') %></textarea>
+        <br />
+        <input type="submit" name="ok" value="submit" />
+      </form>
 % } else {
-
-    </p>
-    <p> Description: <% $.f->('description') %>
-    </p>
-
+      <% $.f->('description') %>
 % }
-
-  </div>
+    </td>
+  </tr>
+</table>
 

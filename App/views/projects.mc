@@ -16,7 +16,6 @@
   <tr>
     <th>Name</th>
     <th>Start date</th>
-    <th>Project</th>
   </tr>
 % my $i = 0;
 % for my $u (@{$.projects}) { 

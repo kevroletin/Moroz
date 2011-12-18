@@ -6,12 +6,14 @@
     $.log_sql
 </%args>
 <%init>
+  use App::Utils;
   use Data::Dumper;
   my $project_id = $.project_id;
   my $q;
 
   my $usr_proj_sth = $.db->prepare( $q = <<SQL
-select u.id, u.name, u.company, role from users_full u 
+select u.id, u.name, u.company, u.company, 
+       u.company_id, role from users_full u 
   join user_project_items on user_id = u.id 
   where user_project_items.project_id = $project_id
 SQL
@@ -33,20 +35,28 @@ SQL
  
 </%init>
 
-<h4> Users working in project: </h4>
+<h1> Users working in project: </h1>
 
-<table>
+% my $i = 0;
+<table class="list">
+  <tr>
+    <th>Name</th>
+    <th>Company</th>
+    <th>Role</th>
+  </tr>
+
 % $usr_proj_sth->execute();
 % while (my $u = $usr_proj_sth->fetchrow_hashref()) { 
-  <tr>
-    <td>id: <% $u->{id} %></td>
-% #    <td><pre><% Dumper $u %></pre></td>
-
-    <td>Name: 
+  <tr class="<% even_odd($i++) %>">
+    <td>
       <a href="/user/<% $u->{id} %>"><% $u->{name} %></a>
     </td>
-    <td>Company: <% $u->{company} %></td>
-    <td>Role: <% $u->{role} %></td>
+    <td>
+      <a href="/company/<% $u->{company_id} %> ">
+        <% $u->{company} %>
+      </a>
+    </td>
+    <td><% $u->{role} %></td>
 %   if ($.user()->{is_admin}) {
     <td>
       <form method="post" action="/project/<% $.project_id %>/users/delete">
@@ -62,16 +72,30 @@ SQL
 
 % if ($.user()->{is_admin}) {
 
-<h4> Add user to project: </h4>
+<br />
+<br />
+<h2> Add user to project: </h2>
 
-<table>
+
+<table class="list">
+  <tr>
+    <th>Name</th>
+    <th>Company</th>
+    <th>Role</th>
+  </tr>
+
+% my $i = 0;
 % $usr_not_proj_sth->execute();
 % while (my $u = $usr_not_proj_sth->fetchrow_hashref()) { 
-  <tr>
-    <td>Name: 
+  <tr class="<% even_odd($i++) %>">
+    <td> 
       <a href="/user/<% $u->{id} %>"><% $u->{name} %></a>
     </td>
-    <td>Company: <% $u->{company} %></td>
+    <td>
+      <a href="/company/<% $u->{company_id} %> ">
+        <% $u->{company} %>
+      </a>
+    </td>
     <td>
         <form method="post" action="/project/<% $.project_id %>/users/add">
           <input type="hidden" name="user_id" value="<% $u->{id} %>" />
