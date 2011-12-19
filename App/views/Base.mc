@@ -47,6 +47,7 @@
   </div>
   
   <div>
+    <a href="/activities">activities</a>
     <a href="/companies">companies</a>
     <a href="/contracts">contracts</a>
     <a href="/projects">projects</a>

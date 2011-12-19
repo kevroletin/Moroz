@@ -17,10 +17,18 @@
     my $users_sth = $.db()->prepare( <<SQL
 select * from user_project_items_full 
 where project_id = $project_id
+and user_id not in (
+  select u.id from users u
+    join user_project_items up on u.id = up.user_id
+    join activity_on_task a on up.id = a.user_project_item_id
+  where a.finish_time is null
+)
 SQL
 );
-    $users_sth->execute();
+
 </%init>
+
+<h1>Add activity on current task</h1>
 
 <form id="activity" method="post"
       action="<% $base_path %>/activities/add" >
@@ -46,11 +54,16 @@ SQL
     <tr>
       <th>Assigned to:</th>
       <td>
+%  if ($.role eq 'manager') {
         <select name="user_project_item_id">
-%  while (my $u = $users_sth->fetchrow_hashref()) {
+%      $users_sth->execute();
+%      while (my $u = $users_sth->fetchrow_hashref()) {
           <option value="<% $u->{id} %>"><% $u->{user} %></option>
-%  }
+%      }
        </select>
+%  } else {
+       <% $.user->{name} %>
+%  }
       </td>
     </tr>
     <tr>

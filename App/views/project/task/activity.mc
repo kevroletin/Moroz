@@ -17,9 +17,18 @@
     my $base_path = "/project/" . $.project_id . "/task/" . $.task_id;
 </%init>
 
-<h1><% defined $.action ? 'Edit' : 'View' %> activity on task</h1>
-
 % $.curr_f->('activity');
+
+<h1>
+  <% defined $.action ? 'Edit' : 'View' %> activity on current task
+</h1>
+
+% if (!defined $.action && $.can_modify) {
+<a href="<% $base_path %>/activity/<% $.f->('id')  %>/edit">
+  Edit
+</a>
+% }
+
 
 <div class="message_box">
   <div class="message"><% $.message %></div>

@@ -5,6 +5,7 @@
     $.project
     $.db
     $.role
+    $.work_on_activity
 </%args>
 <%init>
     use App::Utils;
@@ -14,7 +15,14 @@
 </%init>
 
 % if (defined $.role) {
+%   if ($.role eq 'developer' && defined $.work_on_activity) {
+Can't add new activity. Currently working on
+<a href="<% $base_path %>/activity/<% $.work_on_activity->{id} %>">
+ <% $.work_on_activity->{name} %>
+</a>
+%   } else {
 <a href="<% $base_path %>/activities/add">New activity</a>
+%   }
 % }
 
 <h1>Activities on current task</h1>
@@ -48,7 +56,7 @@
     <td>
     </td>
 
-%     if (0 && $.user()->{is_admin}) {
+%     if (0 && $.role eq 'manager') {
     <td>
         <a href="user/<% $u->{id} %>/edit">edit</a>
     </td>

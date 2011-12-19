@@ -4,13 +4,14 @@
     $.project
     $.project_id
     $.is_manager
+    $.can_modify
 </%args>
 <%init>
     use App::Utils;
     use Data::Dumper;
 </%init>
 
-% if ($.is_manager->()) {
+% if ($.can_modify) {
 <a href="tasks/add">New task</a>
 % }
 
@@ -33,7 +34,7 @@
     <td><% $u->{is_active} ? 'active' : 'not active' %>
     </td>
 
-% #     if ($.is_manager->();) {
+%   if ($.can_modify) {
     <td>
         <a href="task/<% $u->{id} %>/edit">edit</a>
     </td>
@@ -42,7 +43,7 @@
           <input type="submit" value="delete" />
         </form>
     </td>
-% #    }
+%   }
   </tr>
 % }
 %

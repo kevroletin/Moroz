@@ -60,7 +60,7 @@ sub role {
     my $projext_id = vars->{project_id};
     my $user_id = session('user_id');
     my $q = <<SQL
-select role from user_project_items 
+select role, id from user_project_items
   where project_id = $projext_id
   and user_id = $user_id
 SQL
@@ -68,23 +68,14 @@ SQL
     log_sql($q);
     my $sth = database->prepare($q);
     $sth->execute();
-    $sth->fetchrow_array() || undef;
+    my $res = $sth->fetchrow_hashref();
+    var user_project_item_id => $res->{id};
+    $res->{role} || undef;
 }
 
 sub is_manager {
-    my $projext_id = vars->{project_id};
-    my $user_id = session('user_id');
-    my $q = <<SQL
-select $user_id in (
-  select user_id from user_project_items 
-  where project_id = $projext_id
-)
-SQL
-        ;
-    log_sql($q);
-    my $sth = database->prepare($q);
-    $sth->execute();
-    $sth->fetchrow_array();
+    my $role = role();
+    defined $role && $role eq 'manager'
 }
 
 sub works_on_project_only {
@@ -107,6 +98,21 @@ sub manager_only {
         $s->(@_);
     }
 }
+
+sub fetch_user_activity {
+    my $user_id = $_[0] || session('user_id');
+    my $sth = database()->prepare( log_sql <<SQL
+select a.* from users u
+  join user_project_items up on u.id = up.user_id
+  join activity_on_task a on up.id = a.user_project_item_id
+where u.id = ?
+  and a.finish_time is null
+SQL
+);
+    $sth->execute($user_id);
+    my $act = $sth->fetchrow_hashref();
+}
+
 
 hook 'before' => sub {
     if (session('user_id')) {
@@ -132,15 +138,13 @@ hook 'before_template' => sub {
     $t->{db} = database();
     $t->{log_sql} = \&log_sql;
     $t->{is_manager} = \&is_manager;
-    $t->{role} = \&role;
 
     $t->{error} ||= $DBI::errstr if $DBI::errstr;
 };
 
 get '/' => sub {
-    template 'index' => {
-        title => 'mega title'
-    };
+    request->path_info("/user/" . session('user_id'));
+    pass
 };
 
 get '/login' => sub {
@@ -430,7 +434,8 @@ SQL
         template "/project/tasks" => {
             tasks_sth => $sth,
             project_id => $id,
-            project => vars->{project}
+            project => vars->{project},
+            can_modify => is_manager()
         }
     };
 
@@ -577,7 +582,8 @@ SQL
             activities => \@act,
             project_id => $project_id,
             task_id => $task_id,
-            role => role()
+            role => role(),
+            work_on_activity => fetch_user_activity()
         }
     };
 
@@ -595,14 +601,32 @@ SQL
         my $f = to_forms('activity')->(
                     qw(name description user_project_item_id));
         $f->{task_id} = $task_id;
+        if (vars->{role} eq 'developer') {
+            $f->{user_project_item_id} =
+                vars->{user_project_item_id}
+        }
+
+        # Search for unfinished tasks
+        my $sth = database()->prepare( log_sql <<SQL
+select a.* from user_project_items up
+  join activity_on_task a on up.id = a.user_project_item_id
+where up.id = ?
+  and a.finish_time is null
+SQL
+);      my $act;
         eval {
+            $sth->execute($f->{user_project_item_id});
+            $act = $sth->fetchrow_hashref();
             db()->insert('activity_on_task', $f)
         };
-        if ($@) {
-            template "project/task/activity_add" => {
+        if ($@ || $act) {
+            return template "project/task/activity_add" => {
                 project_id => $project_id,
                 task_id => $task_id,
-                role => vars->{role}
+                role => vars->{role},
+                error => ($act ?
+                    "User already working on activity $act->{name} with id=$act->{id}" :
+                    undef)
             }
         }
         redirect "/project/$project_id/task/$task_id/activities"
@@ -850,6 +874,75 @@ prefix '/contract' => sub {
 
 =cut comment
 
+};
+
+get '/activities' => sub {
+
+    my $f = to_forms('filter')->(qw(user_id project_id task_id));
+    my (@f, @values);
+    for (['user_id', 'u.id'], ['project_id', 'p.id'], ['task_id', 't.id']) {
+        if ($f->{$_->[0]}) {
+            push @f, "$_->[1] = ?";
+            push @values, $f->{$_->[0]};
+        } else {
+            delete $f->{$_}
+        }
+    }
+    my $where = join "\nand ", @f;
+    $where = "\nwhere $where " if $where;
+
+    my $sth = database()->prepare( log_sql <<SQL
+select a.*,
+       u.id as user_id,
+       u.name as user,
+       p.id as project_id,
+       p.name as project,
+       t.id as task_id,
+       t.name as task,
+       COALESCE(current_timestamp, finish_time) - a.start_time as duration
+ from activity_on_task a
+  join tasks t on t.id = a.task_id
+  join user_project_items up on a.user_project_item_id = up.id
+  join projects p on p.id = up.project_id
+  join users u on u.id = up.user_id
+$where
+  order by id
+SQL
+);
+
+    my $dur_sth = database()->prepare( log_sql <<SQL
+select sum(COALESCE(current_timestamp, finish_time) - a.start_time)
+ from activity_on_task a
+  join tasks t on t.id = a.task_id
+  join user_project_items up on a.user_project_item_id = up.id
+  join projects p on p.id = up.project_id
+  join users u on u.id = up.user_id
+$where
+SQL
+);
+
+    eval {
+        $sth->execute(@values);
+        $dur_sth->execute(@values);
+    };
+    if ($@) {
+        return template 'error'
+    }
+
+    my $users_sth = database()->prepare( 'select id, name from users order by name' );
+    $users_sth->execute();
+    my $projects_sth = database()->prepare( 'select id, name from projects order by name' );
+    $projects_sth->execute();
+    my $tasks_sth = database()->prepare( 'select id, name from tasks order by name' );
+    $tasks_sth->execute();
+
+    template 'activities' => {
+        activities_sth => $sth,
+        users_sth => $users_sth,
+        tasks_sth => $tasks_sth,
+        projects_sth => $projects_sth,
+        duration => $dur_sth->fetchrow_array()
+    }
 };
 
 any '/**' => sub { send_error('not found', 404) };
