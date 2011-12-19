@@ -1,4 +1,6 @@
 <%args>
+    $.error
+    $.message
     $.curr_f
     $.f
     $.action
@@ -33,7 +35,6 @@ select * from tasks where id in (
   select blocking_task_id from task_dependences
   where depended_task_id = $task_id
 )
-and is_active = true
 SQL
         ;
     $.log_sql->($q);
@@ -44,7 +45,6 @@ select * from tasks where id in (
   select depended_task_id from task_dependences
   where blocking_task_id = $task_id
 )
-and is_active = true
 SQL
         ;
     $.log_sql->($q);
@@ -65,6 +65,13 @@ SQL
 <form id="<% $.curr_f->('task') %>"
         method="post"
         action="<% '/project/' . $.project_id . '/task/' . $.f->('id'). '/edit' %>" >
+
+
+    <div class="message_box">
+      <div class="message"><% $.message %></div>
+      <div class="error"><% $.error %></div>
+    </div>
+
     <table class="edit">
     <tr>
       <th>Name:</th>
@@ -128,6 +135,9 @@ SQL
         <% $u->{name} %>
       </a>
     </td>
+    <td>
+      <% $u->{is_active} ? 'active' : 'finished' %>
+    </td>
 %   if ($.action && $.action eq 'edit') {
     <td>
       <form method="post" action="/project/<% $.project_id %>/task/<% $task_id %>/unlink">
@@ -158,7 +168,7 @@ SQL
 <br />
 <h2>Blocked by</h2>
 <table class="list">
-% my $i = 0;
+% $i = 0;
 % $tasks_blokers_sth->execute();
 % while (my $u = $tasks_blokers_sth->fetchrow_hashref()) {
   <tr class="<% even_odd($i++) %>">
@@ -166,6 +176,9 @@ SQL
       <a href="/project/<% $.project_id %>/task/<% $u->{id} %>">
         <% $u->{name} %>
       </a>
+    </td>
+    <td>
+      <% $u->{is_active} ? 'active' : 'finished' %>
     </td>
 %   if ($.action && $.action eq 'edit') {
     <td>

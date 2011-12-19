@@ -1,4 +1,6 @@
 <%args>
+    $.error
+    $.message
     $.curr_f
     $.f
     $.action
@@ -7,9 +9,9 @@
 % $.curr_f->('project');
 
 <p>
-<a href="/project/<% $.f->('id') %>/companies">companies</a>
-<a href="/project/<% $.f->('id') %>/users">users</a>
-<a href="/project/<% $.f->('id') %>/tasks">tasks</a>
+  <a href="/project/<% $.f->('id') %>/companies">companies</a>
+  <a href="/project/<% $.f->('id') %>/users">users</a>
+  <a href="/project/<% $.f->('id') %>/tasks">tasks</a>
 <p>
 
 
@@ -18,6 +20,12 @@
   <form id="<% $.curr_f->('project') %>"
         method="post"
         action="<% $.action %>" >
+
+    <div class="message_box">
+      <div class="message"><% $.message %></div>
+      <div class="error"><% $.error %></div>
+    </div>
+
     <table class="edit">
     <tr>
       <th>Name:</th>

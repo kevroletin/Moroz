@@ -1,4 +1,6 @@
 <%args>
+    $.error
+    $.message
     $.curr_f
     $.f
     $.action
@@ -14,6 +16,12 @@
   <form id="<% $.curr_f->('user') %>"
         method="post"
         action="<% $.action %>" >
+
+    <div class="message_box">
+      <div class="message"><% $.message %></div>
+      <div class="error"><% $.error %></div>
+    </div>
+
     <table class="edit">
     <tr>
       <th>Name:</th>

@@ -1,4 +1,6 @@
 <%args>
+    $.error
+    $.message
     $.task_id
     $.project_id
     $.db
@@ -18,6 +20,11 @@
 <h1><% defined $.action ? 'Edit' : 'View' %> activity on task</h1>
 
 % $.curr_f->('activity');
+
+<div class="message_box">
+  <div class="message"><% $.message %></div>
+  <div class="error"><% $.error %></div>
+</div>
 
 <table class="edit">
   <tr>

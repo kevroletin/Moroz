@@ -1,4 +1,6 @@
 <%args>
+    $.error
+    $.message
     $.user
     $.task_id
     $.project_id
@@ -6,7 +8,6 @@
     $.role
     $.curr_f
     $.f
-
 </%args>
 <%init>
     use Data::Dumper;
@@ -23,6 +24,12 @@ SQL
 
 <form id="activity" method="post"
       action="<% $base_path %>/activities/add" >
+
+  <div class="message_box">
+    <div class="message"><% $.message %></div>
+    <div class="error"><% $.error %></div>
+  </div>
+
   <table class="edit">
     <tr>
       <th>Name</th>

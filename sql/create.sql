@@ -71,13 +71,10 @@ create table activity_on_task (
   finish_time TIMESTAMP DEFAULT(NULL),
   task_id INTEGER NOT NULL REFERENCES tasks(id),
   user_project_item_id INTEGER NOT NULL 
-                       REFERENCES user_project_items(id),
-
-  constraint activity_on_task_unique_refs_constraint
-      unique(task_id, user_project_item_id)
+                       REFERENCES user_project_items(id)
 );
 
-create table task_dependences  (
+create table task_dependences (
 /*  id SERIAL PRIMARY KEY, */
   blocking_task_id INTEGER NOT NULL REFERENCES tasks(id),
   depended_task_id INTEGER NOT NULL REFERENCES tasks(id),
@@ -117,4 +114,113 @@ create view activity_on_task_full as
       on user_project_item_id = user_project_items.id
     join users on user_project_items.user_id = users.id;
 
+
 /* COMMIT; */
+
+CREATE OR REPLACE FUNCTION find_path (INTEGER, INTEGER) 
+RETURNS SETOF INTEGER AS $$  
+    my ($master, $slave) = @_;
+    
+    my $plan = spi_prepare(
+'SELECT * FROM task_dependences where blocking_task_id = $1', 'INTEGER');
+    my @fifo = ($master);
+    my %from;
+
+    while (@fifo && !$from{$slave}) {
+        my $from = shift @fifo;
+	my $sth = spi_query_prepared($plan, $from);
+	while (defined ($row = spi_fetchrow($sth))) {
+		my $to = $row->{depended_task_id};
+		next if defined $from{$to};
+		$from{$to} = $from;
+		push @fifo, $to;
+	}
+    }
+
+    my $i = $slave;
+    while ($from{$i}) {
+	return_next($from{$i});
+	$i = $from{$i};
+    }
+   
+    return;
+$$ LANGUAGE plperl;
+
+CREATE OR REPLACE FUNCTION check_circular_link()
+RETURNS trigger AS $$
+    my $master = $_TD->{new}{blocking_task_id};
+    my $slave = $_TD->{new}{depended_task_id};
+
+    my $plan = spi_prepare(
+'SELECT * FROM task_dependences where blocking_task_id = $1', 'INTEGER');
+    my @fifo = ($master);
+    my %from;
+
+    while (@fifo && !$from{$slave}) {
+        my $from = shift @fifo;
+	my $sth = spi_query_prepared($plan, $from);
+	while (defined ($row = spi_fetchrow($sth))) {
+		my $to = $row->{depended_task_id};
+		next if defined $from{$to};
+		$from{$to} = $from;
+		push @fifo, $to;
+	}
+    }
+
+    if (defined $from{$slave}) {
+        elog(ERRROR, 'circular dependency');
+        return "SKIP";
+    }
+    return;
+
+$$ LANGUAGE plperl;
+
+ALTER TABLE task_dependences
+ADD CONSTRAINT check_circular_dependency
+CHECK(not path_exists(depended_task_id, blocking_task_id) 
+      and blocking_task_id != depended_task_id);
+
+
+CREATE OR REPLACE FUNCTION can_finish_task (INTEGER, BOOLEAN) 
+RETURNS BOOLEAN AS $$  
+    my ($task_id, $new_val) = @_;
+    return true if $new_val;
+    
+    my $plan = spi_prepare( <<SQL
+SELECT NOT EXISTS (
+  select * from task_dependences td
+  join tasks on td.blocking_task_id = tasks.id
+  where td.depended_task_id = \$1
+  and is_active = true
+) as result
+SQL
+,'INTEGER');
+
+   my $res = spi_exec_prepared($plan, $task_id);	
+   
+   return $res->{rows}[0]{result};
+$$ LANGUAGE plperl;
+
+CREATE OR REPLACE FUNCTION can_open_task (INTEGER, BOOLEAN) 
+RETURNS BOOLEAN AS $$  
+    my ($task_id, $new_val) = @_;
+    return true unless $new_val;
+    
+    my $plan = spi_prepare( <<SQL
+SELECT NOT EXISTS (
+  select * from task_dependences td
+  join tasks on td.depended_task_id = tasks.id
+  where td.blocking_task_id = \$1
+  and is_active = false
+) as result
+SQL
+,'INTEGER');
+
+   my $res = spi_exec_prepared($plan, $task_id);	
+   
+   return $res->{rows}[0]{result};
+$$ LANGUAGE plperl;
+
+ALTER TABLE tasks ADD CONSTRAINT can_finish_task_constraint
+CHECK(can_finish_task(id, is_active) and 
+      can_open_task(id, is_active));

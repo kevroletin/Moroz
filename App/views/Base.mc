@@ -10,7 +10,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 
-<!-- LIVERELOAD -->
+<!-- LIVERELOAD -- >
   <script src="/livereload/src/content.js"></script>
   <script src="/livereload/src/background.js"></script>
   <script src="/livereload/src/xbrowser/livereload.js"></script>
@@ -19,7 +19,7 @@
       livereload.run();
     };
   </script>
-<!-- LIVERELOAD -->
+< !-- LIVERELOAD -->
 
   <link rel="stylesheet" type="text/css" href="/css/clear.css" />
   
