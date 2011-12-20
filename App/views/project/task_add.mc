@@ -36,7 +36,7 @@
     <tr>
       <th>Estimate time:</th>
       <td>
-        <input type="text" name="estimate_time" value="00:00:00" /> 
+        <input type="text" name="estimate_time" value="0" /> 
       </td>
     </tr>
     <tr>

@@ -9,6 +9,7 @@
 % $.curr_f->('project');
 
 <p>
+  <a href="/project/<% $.f->('id') %>/chart">Gantt chart</a>
   <a href="/project/<% $.f->('id') %>/companies">companies</a>
   <a href="/project/<% $.f->('id') %>/users">users</a>
   <a href="/project/<% $.f->('id') %>/tasks">tasks</a>

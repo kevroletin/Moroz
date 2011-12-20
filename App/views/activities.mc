@@ -113,7 +113,7 @@
     <td><% $u->{finish_time} ? ($u->{finish_time} =~ /(.*)\./, $1) : '' %>
     </td>
     <td>
-      <% $u->{duration} =~ /(.*)\./, $1 %>
+      <% $u->{duration} ? ($u->{duration} =~ /(.*)\./, $1) : ''  %>
     </td>
 
 %     if (0 && $.role eq 'manager') {
@@ -137,7 +137,7 @@
     <td></td>
     <td></td>
     <td></td>
-    <th><% $.duration =~ /(.*)\./, $1 %></th>
+    <th><% $.duration ? ($.duration =~ /(.*)\./, $1) : '' %></th>
   </tr>
 
 </table>

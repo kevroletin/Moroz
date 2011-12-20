@@ -24,7 +24,7 @@ create table users (
 create table projects (
   id SERIAL PRIMARY KEY,
   name TEXT NOT NULL,
-  start_date DATE DEFAULT(current_date),
+  start_time TIMESTAMP DEFAULT(current_timestamp),
   description TEXT
 );
 
@@ -59,7 +59,7 @@ create table tasks (
   id SERIAL PRIMARY KEY,
   name TEXT NOT NULL,
   project_id INTEGER REFERENCES projects(id),
-  estimate_time TIME,
+  estimate_time INTEGER DEFAULT(0),
   is_active BOOL DEFAULT('true')
 );
 
@@ -184,7 +184,7 @@ CHECK(not path_exists(depended_task_id, blocking_task_id)
 CREATE OR REPLACE FUNCTION can_finish_task (INTEGER, BOOLEAN) 
 RETURNS BOOLEAN AS $$  
     my ($task_id, $new_val) = @_;
-    return true if $new_val;
+    return true if $new_val eq 't';
     
     my $plan = spi_prepare( <<SQL
 SELECT NOT EXISTS (
@@ -204,7 +204,7 @@ $$ LANGUAGE plperl;
 CREATE OR REPLACE FUNCTION can_open_task (INTEGER, BOOLEAN) 
 RETURNS BOOLEAN AS $$  
     my ($task_id, $new_val) = @_;
-    return true unless $new_val;
+    return true if $new_val eq 'f';
     
     my $plan = spi_prepare( <<SQL
 SELECT NOT EXISTS (

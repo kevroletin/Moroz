@@ -71,3 +71,8 @@ div.message {
 div.error {
     color: red;
 }
+
+.chart rect {
+  stroke: white;
+}
+

@@ -3,6 +3,8 @@ use Dancer ':syntax';
 use Dancer::Plugin::Database;
 use App::Database;
 use App::Validate;
+use App::Utils;
+use App::Chart;
 
 use Data::Dumper::Concise;
 
@@ -26,7 +28,7 @@ sub from_forms { $forms->{$_[0]} }
 
 
 sub log_sql {
-#     print STDERR "**********SQL: " . $_[0] || '' . "\n";
+     print STDERR "**********SQL: " . $_[0] || '' . "\n";
 #     print "<pre>$_[0]</pre>";
      $_[0]
 }
@@ -408,6 +410,22 @@ prefix '/project' => sub {
             return template 'error'
         }
         redirect '/projects'
+    };
+
+    get '/*/chart' => sub {
+        my ($project_id) = splat;
+
+        my ($data, $tasks, $extra) =
+            App::Chart::compute_chart_data($project_id);
+
+#        print STDERR Dumper "********************:", $data, $tasks, $extra;
+        template 'project/gantt' => {
+            project => vars->{project},
+            project_id => vars->{project_id},
+            data => $data,
+            tasks => $tasks,
+            extra => $extra
+        };
     };
 
     get '/*/companies' => sub {
