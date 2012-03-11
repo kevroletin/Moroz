@@ -13,15 +13,15 @@
     my $first_time = $.extra->{first_time};
     my $last_time = $.extra->{last_time};
 
-print "<pre>";
+#print "<pre>";
 #print Dumper $t, $t_h, $first_time, $last_time;
-print Dumper $t_h;
-print "</pre>";
+#print Dumper $t_h;
+#print "</pre>";
 
 
 </%init>
 
-% my $svg_height = @$t * 20;
+% my $svg_height = (@$t + 1) * 20;
 <svg xmlns="http://www.w3.org/2000/svg"
      xmlns:xlink="http://www.w3.org/1999/xlink"
      class="chart"
@@ -38,7 +38,7 @@ print "</pre>";
 <svg viewBox="<% $coord_start  %> 0 <% $coord_width %> <% $svg_height %>"
      preserveAspectRatio="none">
 
-% my $i = 0;
+% my $i = 1;
 % for (@$t) {
 %    my ($id) = $_->[0];
 %    my $y = $i * 20;
@@ -63,11 +63,11 @@ print "</pre>";
      preserveAspectRatio="none">
 
 
-% $i = 0;
+% $i = 1;
 % for (@$t) {
 %    my ($id, $name) = @$_;
 %    my $y = $i*20 + 15;
-%    my $x = 0;
+%    my $x = 1000 * ($t_h->{$id}->{x} / $coord_width);
   <text x="<% $x %>" y="<% $y %>"><% $id %>:<% $name %>:</text>
 %   ++$i;
 % }
@@ -84,7 +84,7 @@ print "</pre>";
     my ($year,$month,$day, $h, $min) =
         Date::Calc::Time_to_Date($date);
 </%perl>
-    <text x=<% $x %> y=<% 15 %> >
+    <text x="<% $x %>" y="<% 15 %>" >
       <% $month %>-<% $day %> <% $h %>:<% $min %>
     </text>
 % }

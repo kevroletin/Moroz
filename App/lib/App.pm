@@ -28,7 +28,7 @@ sub from_forms { $forms->{$_[0]} }
 
 
 sub log_sql {
-     print STDERR "**********SQL: " . $_[0] || '' . "\n";
+#     print STDERR "**********SQL: " . $_[0] || '' . "\n";
 #     print "<pre>$_[0]</pre>";
      $_[0]
 }
@@ -486,7 +486,7 @@ SQL
 
     any ['get', 'post'] => '/*/task/**' => sub {
         my ($project_id, $p) = splat;
-        my $task_id = shift $p;
+        my $task_id = shift @$p;
         my $task;
         eval {
             $task = database()->quick_select(
@@ -652,7 +652,7 @@ SQL
 
     any ['get', 'post'] => '/*/task/*/activity/**' => sub {
         my ($project_id, $task_id, $p) = splat;
-        my $activity_id = shift $p;
+        my $activity_id = shift @$p;
         var activity_id => $activity_id;
         my $act;
         eval {

@@ -18,7 +18,7 @@ sub last_err { return $DBI::errstr }
 sub insert {
     my ($s, $table, $h) = @_;
     my (@k, @v);
-    while (my ($k, $v) = each $h) {
+    while (my ($k, $v) = each %$h) {
         push @k, $k;
         push @v, $v;
     }
@@ -36,7 +36,7 @@ sub update {
     my ($s, $table, $h, $id) = @_;
     my @expr;
     my @v;
-    while (my ($k, $v) = each $h) {
+    while (my ($k, $v) = each %$h) {
         push @expr, "$k = ?";
         push @v, $v;
     }
