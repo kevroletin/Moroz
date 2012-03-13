@@ -25,9 +25,8 @@ Haffman::Haffman() {
 
 void Haffman::preprocess(vector<string> files) {
   for (int i = 0; i < files.size(); ++i) {
-    FILE* f = (FILE*)1;
-    freopen(files[i].c_str(), "r", stdin);
-    if (f == NULL ) {
+    freopen(files[i].c_str(), "rb", stdin);
+    if (stdin == NULL) {
       throw Error(string("can't open file: ") + files[i]);
     } else {
       char c = getchar();
