@@ -11,10 +11,10 @@ class CmdLineParser {
 public:
   CmdLineParser();
   bool parse_cmd_line(int argc, char* argv[]);
-  
+
   enum State { ST_INIT,
-               ST_COMPRESSION_TYPE, 
-               ST_FILES, 
+               ST_COMPRESSION_TYPE,
+               ST_FILES,
                ST_ERROR };
 
   enum Action { ACT_NONE,
@@ -30,7 +30,7 @@ public:
   Compression compression;
   string last_error;
   vector<string> files;
-  
+
   void error(string msg);
   void print_help();
   void dump();
@@ -47,8 +47,8 @@ bool CmdLineParser::parse_cmd_line(int argc, char* argv[]) {
   for (int i = 1;
        i < argc &&
        this->state != ST_ERROR &&
-       this->action != ACT_PRINT_HELP; 
-       (repeat ? 0: ++i), repeat = false) 
+       this->action != ACT_PRINT_HELP;
+       (repeat ? 0: ++i), repeat = false)
     {
     string argument = argv[i];
     switch (this->state) {
@@ -81,7 +81,7 @@ bool CmdLineParser::parse_cmd_line(int argc, char* argv[]) {
     case (ST_FILES): {
       files.push_back(argument);
     };
-    }    
+    }
   }
 
   if (this->action == ACT_NONE) {
@@ -145,6 +145,6 @@ int main(int argc, char* argv[]) {
   } else {
     cmdp.dump();
   }
-  
+
   return 0;
 }

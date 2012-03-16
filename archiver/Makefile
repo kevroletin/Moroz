@@ -11,7 +11,7 @@ ede_FILES=Project.ede Makefile
 
 debug_SOURCES=main.cpp haffman.cpp
 debug_OBJ= main.o haffman.o
-CXX= g++
+CXX= g++ -g
 CXX_COMPILE=$(CXX) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)
 CXX_DEPENDENCIES=-Wp,-MD,.deps/$(*F).P
 CXX_LINK=$(CXX) $(CFLAGS) $(LDFLAGS) -L.
