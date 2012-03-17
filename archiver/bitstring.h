@@ -5,7 +5,7 @@ class BitString {
 public:
   class BitProxy {
   public:
-    BitProxy(BitString& parent_, unsigned index_): 
+    BitProxy(BitString& parent_, unsigned index_):
       parent(parent_), index(index_) {}
     BitProxy& operator= (bool bit_value) {
       int byte = index / 8;
@@ -38,7 +38,7 @@ public:
   BitProxy operator[] (unsigned index);
   unsigned bytes();
   int shift();
-  
+
   void dump();
   void dump_raw();
   //protected:
@@ -66,8 +66,8 @@ public:
   //static const int BUFFER_MAX_SIZE = ;
 
   BitsIO();
-  
-  void refresh() { 
+
+  void refresh() {
     size = 0;
     shift = 0;
     writed = 0;
@@ -85,7 +85,7 @@ public:
   unsigned size;
   unsigned shift;
   long long writed;
-  
+
   void dump();
 };
 

@@ -18,7 +18,7 @@ public:
   Error(ErrorCode code);
   Error(ErrorCode code, std::string msg);
   Error(std::string msg);
-  
+
   virtual std::string message();
   virtual ErrorCode code();
 private:
@@ -30,8 +30,8 @@ inline Error::Error(ErrorCode code_):
   code_val(code_),
   msg("unspecified") {}
 
-inline Error::Error(ErrorCode code_, std::string msg_): 
-  msg(msg_), 
+inline Error::Error(ErrorCode code_, std::string msg_):
+  msg(msg_),
   code_val(code_) {}
 
 inline Error::Error(std::string msg_): msg(msg_), code_val(ERR_UNDEFUNED) {}

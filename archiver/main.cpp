@@ -146,7 +146,6 @@ int main(int argc, char* argv[]) {
     cerr << "    error: " << cmdp.last_error << "\n";
     cmdp.print_help();
   } else {
-    cmdp.dump();
     Haffman h;
     try {
       switch (cmdp.action) {
@@ -156,6 +155,9 @@ int main(int argc, char* argv[]) {
       case (CmdLineParser::ACT_DECOMPRESSION): {
         h.decompress(cmdp.files[0]);
       } break;
+      case (CmdLineParser::ACT_PRINT_HELP):{
+        cmdp.print_help();
+      }
       }
     }
     catch (Error& e) {

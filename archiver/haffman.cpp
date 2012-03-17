@@ -13,7 +13,7 @@
 #define WRITE(x) fwrite(&x, sizeof(x), 1, stdout)
 
 void write_arr(const void* p, unsigned size) {
-  fwrite(p, 1, size, stdout); 
+  fwrite(p, 1, size, stdout);
 }
 
 void write_ll(unsigned long long i) {
@@ -89,7 +89,7 @@ void Haffman::preprocess() {
         unsigned char c;
         scanf("%c", &c);
         ++table[c];
-        ++sizes[i];    
+        ++sizes[i];
       }
       --sizes[i];
     }
@@ -123,8 +123,6 @@ void Haffman::dump_header() {
 }
 
 void Haffman::read_header() {
-  check_magic("header start");
-
   sizes.clear();
   names.clear();
   char buff[1024];
@@ -137,12 +135,10 @@ void Haffman::read_header() {
   }
   check_magic("table start");
   fread(table, sizeof(table[0]), 256, stdin);
-    
   check_magic("header finish");
 }
 
 void Haffman::write_header() {
-  write_magic();
   write_ll(sizes.size());
   for (int i = 0; i < sizes.size(); ++i) {
     write_ll(sizes[i]);
@@ -216,7 +212,7 @@ void Haffman::compress(vector<string>& files) {
       scanf("%c", &c);
     }
     io.flush_with_padding();
-    write_magic();
+    //    write_magic();
     fclose(stdin);
   }
 
@@ -245,7 +241,7 @@ void Haffman::decompress(string& file) {
       unsigned char c = restore_symbol();
       printf("%c", c);
     }
-    check_magic("file finish");
+    //check_magic("file finish");
     fclose(stdout);
   }
   fclose(stdin);

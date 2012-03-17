@@ -188,14 +188,14 @@ void BitString::dump_raw() {
 #include <cstdlib>
 
 int main(int argc, char* argv[]) {
-  
+
   if (1) {
     BitsIO bio;
     BitString b;
     b << 1 << 1 << 1 << 1 << 1 << 1 << 1 << 1
       << 1 << 1 << 1 << 1 << 1 << 1 << 1 << 1;
     BitStringComputedShifts bb(b);
-    
+
     freopen("tmp.txt", "wb", stdout);
 
     bio << bb;
@@ -204,7 +204,7 @@ int main(int argc, char* argv[]) {
     //    bio << bb;
     //bio.dump();
     //bio.flush_with_padding();
-    
+
     fclose(stdout);
 
     //    freopen("tmp.txt", "rb", stdin);
@@ -236,7 +236,7 @@ int main(int argc, char* argv[]) {
       bio << bb;
 
       if (10*rand() < 2) { bio.partial_flush(); std::cerr << "flush"; }
-      
+
       //bio.dump();
     }
   }
