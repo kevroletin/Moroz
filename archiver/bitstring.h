@@ -67,6 +67,12 @@ public:
 
   BitsIO();
   
+  void refresh() { 
+    size = 0;
+    shift = 0;
+    writed = 0;
+    read_buffer_shift = -1;
+  }
   void flush_with_padding();
   void partial_flush();
   bool read_bit();

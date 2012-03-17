@@ -1,3 +1,6 @@
+#include "exception.h"
+#include "compressors.h"
+
 #include <iostream>
 #include <iterator>
 #include <algorithm>
@@ -144,6 +147,20 @@ int main(int argc, char* argv[]) {
     cmdp.print_help();
   } else {
     cmdp.dump();
+    Haffman h;
+    try {
+      switch (cmdp.action) {
+      case (CmdLineParser::ACT_COMPRESSION): {
+        h.compress(cmdp.files);
+      } break;
+      case (CmdLineParser::ACT_DECOMPRESSION): {
+        h.decompress(cmdp.files[0]);
+      } break;
+      }
+    }
+    catch (Error& e) {
+      std::cerr << e.message();
+    }
   }
 
   return 0;

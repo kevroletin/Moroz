@@ -1,4 +1,7 @@
 #include "bitstring.h"
+#include "exception.h"
+#include "bitstring.h"
+#include "compressors.h"
 
 #include <iostream>
 #include <cstdio>
@@ -7,43 +10,34 @@
 #include <vector>
 #include <algorithm>
 
-#include "exception.h"
+#define WRITE(x) fwrite(&x, sizeof(x), 1, stdout)
+
+void write_arr(const void* p, unsigned size) {
+  fwrite(p, 1, size, stdout); 
+}
+
+void write_ll(unsigned long long i) {
+  fwrite(&i, sizeof(long long int), 1, stdout);
+}
+
+unsigned long long read_ll() {
+  unsigned long long i;
+  if (feof(stdin)) { throw Error("unexpected end of file"); }
+  fread(&i, sizeof(long long int), 1, stdin);
+  return i;
+}
 
 using namespace std;
 
-const int SYM_COUNT = 256;
-
-struct Node;
-
-class Haffman {
-public:
-  Haffman();
-  //  void compress(vector<string> files);
-  void preprocess(vector<string> files);
-  void preprocess_dummy(vector<string> files);
-  void build_codes();
-  void compress(string file);
-  void decompress(string file);
-  unsigned char restore_symbol();
-  void dump_table();
-  void dump_codes();
-  //protected:
-  BitsIO io;
-  Node* tree_root;
-  unsigned table[SYM_COUNT];
-  //  vector<int> file_sized;
-  BitStringComputedShifts codes[SYM_COUNT];
-};
-
 struct Node {
   Node(): left_child(NULL), right_child(NULL) {}
-  Node(unsigned weight_,
+  Node(long long unsigned weight_,
        unsigned char sym_,
        Node* left_child_ = NULL,
        Node* right_child_ = NULL):
     weight(weight_), sym(sym_),
     left_child(left_child_), right_child(right_child_) {}
-  unsigned weight;
+  long long unsigned weight;
   unsigned char sym;
   Node* left_child;
   Node* right_child;
@@ -80,21 +74,24 @@ struct Node {
   }
 };
 
-Haffman::Haffman(): tree_root(NULL) {
-  memset(table, 0, sizeof(table));
-}
+Haffman::Haffman(): tree_root(NULL) {}
 
-void Haffman::preprocess(vector<string> files) {
-  for (int i = 0; i < files.size(); ++i) {
-    freopen(files[i].c_str(), "rb", stdin);
+void Haffman::preprocess() {
+  memset(table, 0, sizeof(table));
+  sizes.clear();
+  for (int i = 0; i < names.size(); ++i) {
+    freopen(names[i].c_str(), "rb", stdin);
     if (stdin == NULL) {
-      throw Error(string("can't open file: ") + files[i]);
+      throw Error(string("can't open file: ") + names[i]);
     } else {
+      sizes.push_back(0);
       while (!feof(stdin)) {
         unsigned char c;
         scanf("%c", &c);
         ++table[c];
+        ++sizes[i];    
       }
+      --sizes[i];
     }
     fclose(stdin);
   }
@@ -105,7 +102,7 @@ void Haffman::dump_table() {
   cerr << "\nTable:\n";
   int j = 0;
   for (int i = 0; i < SYM_COUNT; ++i) {
-    fprintf(stderr, "%-3u: %-7u \n", i, this->table[i]);
+    fprintf(stderr, "%-3u: %-7llu \n", i, this->table[i]);
   }
 }
 
@@ -116,9 +113,60 @@ void Haffman::dump_codes() {
   }
 }
 
-void Haffman::preprocess_dummy(vector<string> files) {
+void Haffman::dump_header() {
+  fprintf(stderr, "size: %i\n", sizes.size());
+  for (int i = 0; i < sizes.size(); ++i) {
+    fprintf(stderr, "%llu %s\n", sizes[i], names[i].c_str());
+  }
+  fprintf(stderr, "\n");
+  dump_table();
+}
+
+void Haffman::read_header() {
+  check_magic("header start");
+
+  sizes.clear();
+  names.clear();
+  char buff[1024];
+  unsigned long long size = read_ll();
+  for (int i = 0; i < size; ++i) {
+    unsigned long long s = read_ll();
+    sizes.push_back(s);
+    scanf("%s ", buff);
+    names.push_back(buff);
+  }
+  check_magic("table start");
+  fread(table, sizeof(table[0]), 256, stdin);
+    
+  check_magic("header finish");
+}
+
+void Haffman::write_header() {
+  write_magic();
+  write_ll(sizes.size());
+  for (int i = 0; i < sizes.size(); ++i) {
+    write_ll(sizes[i]);
+    printf("%s ", names[i].c_str());
+  }
+  write_magic();
+  fwrite(table, sizeof(table[0]), 256, stdout);
+  write_magic();
+}
+
+void Haffman::preprocess_dummy() {
   for (int i = 0; i < SYM_COUNT; ++i) {
     table[i] = i;
+  }
+  sizes.clear();
+  for (int i = 0; i < names.size(); ++i) {
+    sizes.push_back(0);
+    freopen(names[i].c_str(), "rb", stdin);
+    while(!feof(stdin)) {
+      getchar();
+      ++sizes[i];
+    }
+    --sizes[i];
+    fclose(stdin);
   }
   //random_shuffle(table, table + SYM_COUNT);
   build_codes();
@@ -149,18 +197,30 @@ void Haffman::build_codes() {
   heap[0]->restore_codes(path, *this);
 }
 
-void Haffman::compress(string file) {
-  freopen(file.c_str(), "rb", stdin);
+void Haffman::compress(vector<string>& files) {
+  string out_file = files[0];
+  names.clear();
+  for (int i = 1; i < files.size(); ++i) {
+    names.push_back(files[i]);
+  }
+  preprocess();
+  freopen(out_file.c_str(), "wb", stdout);
+  write_header();
 
-  while (!feof(stdin)) {
+  for (int i = 0; i < names.size(); ++i) {
+    freopen(names[i].c_str(), "rb", stdin);
     unsigned char c;
     scanf("%c", &c);
-
-    //    codes[c].strings[0].dump();
-
-    io << codes[c];
+    while (!feof(stdin)) {
+      io << codes[c];
+      scanf("%c", &c);
+    }
+    io.flush_with_padding();
+    write_magic();
+    fclose(stdin);
   }
-  fclose(stdin);
+
+  fclose(stdout);
 }
 
 unsigned char Haffman::restore_symbol() {
@@ -172,37 +232,60 @@ unsigned char Haffman::restore_symbol() {
   return n->sym;
 }
 
-void Haffman::decompress(string file) {
+void Haffman::decompress(string& file) {
   freopen(file.c_str(), "rb", stdin);
+  read_header();
+  build_codes();
 
-  //while (!feof(stdin)) {
-  for (int i = 0; i < 100; ++i) {
-    unsigned char c = restore_symbol();
-    printf("%c", c);
+  for (int i = 0; i < names.size(); ++i) {
+    std::cerr << "processing " << names[i].c_str() << endl;
+    io.refresh();
+    freopen(names[i].c_str(), "wb", stdout);
+    for (unsigned long long j = 0; j < sizes[i]; ++j) {
+      unsigned char c = restore_symbol();
+      printf("%c", c);
+    }
+    check_magic("file finish");
+    fclose(stdout);
   }
   fclose(stdin);
+}
+
+void Haffman::write_magic() {
+  write_ll(Haffman::magic);
+}
+
+void Haffman::check_magic() {
+  unsigned long long u = read_ll();
+  if (u != Haffman::magic) {
+    fprintf(stderr, "%llx\n", u);
+    throw Error("wrong magic (corrupted file?)");
+  }
+}
+
+void Haffman::check_magic(char const* msg) {
+  fprintf(stderr, "magic: %s ", msg);
+  check_magic();
+  fprintf(stderr, " ok\n", msg);
 }
 
 #ifdef SEPARATE_BUILD_HAFFMAN
 
 int main(int argc, char* argv[]) {
 
-  freopen("result", "wb", stdout);
+  Haffman h;
 
+  string o;
   vector<string> f;
-  for (int i = 1; i < argc; ++i) {
+  for (int i = 2; i < argc; ++i) {
     f.push_back(argv[i]);
   }
-  Haffman h;
   try {
-    h.preprocess_dummy(f);
-    //h.preprocess(f);
-
-    //h.dump_table();
-    //h.dump_codes();
-
-    //h.compress(f[0]);
-    h.decompress(f[0]);
+    if (0) {
+      h.compress(f);
+    } else {
+      h.decompress(f[0]);
+    }
   }
   catch (Error e) {
     std::cerr << e.message();

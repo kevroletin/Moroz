@@ -10,7 +10,7 @@ using namespace std;
 
 string char2bin(unsigned char c) {
   char buff[9] = { 0 };
-#if 1
+#if 0
   unsigned char mask = 1;
   for (int j = 0; j < 8; ++j, mask <<= 1) {
     buff[7 - j] = (c & mask) ? '1' : '0';
@@ -74,8 +74,7 @@ bool BitsIO::read_bit() {
 void BitsIO::flush_with_padding() {
   if (shift != 0) {
     unsigned char mask = 0xff << shift;
-    buffer[size] &= mask;
-    ++size;
+    buffer[size- 1] &= mask;
     shift = 0;
   }
   partial_flush();
@@ -161,7 +160,7 @@ int BitString::shift() {
 }
 
 void BitString::dump() {
-#if 1
+#if 0
   for (int i = 0; i < size; ++i) {
     cerr << (*this)[i];
     if (!((i + 1) % 8)) { cerr << ' '; }
@@ -189,6 +188,30 @@ void BitString::dump_raw() {
 #include <cstdlib>
 
 int main(int argc, char* argv[]) {
+  
+  if (1) {
+    BitsIO bio;
+    BitString b;
+    b << 1 << 1 << 1 << 1 << 1 << 1 << 1 << 1
+      << 1 << 1 << 1 << 1 << 1 << 1 << 1 << 1;
+    BitStringComputedShifts bb(b);
+    
+    freopen("tmp.txt", "wb", stdout);
+
+    bio << bb;
+    bio.dump();
+    bio.flush_with_padding();
+    //    bio << bb;
+    //bio.dump();
+    //bio.flush_with_padding();
+    
+    fclose(stdout);
+
+    //    freopen("tmp.txt", "rb", stdin);
+    //fclose(stdin);
+    return 0;
+  }
+
 
 #if 1
 
@@ -204,18 +227,23 @@ int main(int argc, char* argv[]) {
     int j = 0;
     while (!feof(stdin) && j++ < i) {
       b << bio.read_bit();
+      if (feof(stdin)) { b.size--; }
     }
     if (j) {
-      b.dump();
+      //b.dump();
       BitStringComputedShifts bb(b);
-      bb.dump();
+      //bb.dump();
       bio << bb;
-      bio.dump();
+
+      if (10*rand() < 2) { bio.partial_flush(); std::cerr << "flush"; }
+      
+      //bio.dump();
     }
   }
   cerr << bio.shift;
   //  bio.flush_with_padding();
-  bio.partial_flush();
+  //bio.partial_flush();
+  bio.flush_with_padding();
   fclose(stdin);
   fclose(stdout);
 

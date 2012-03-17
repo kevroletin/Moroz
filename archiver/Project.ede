@@ -7,8 +7,8 @@
    (ede-proj-target-makefile-program "debug"
     :name "debug"
     :path ""
-    :source '("main.cpp" "haffman.cpp" "bitsring.cpp" "bitstring.cpp")
-    :auxsource '("exception.h" "bitsring.h")
+    :source '("main.cpp" "haffman.cpp" "bitstring.cpp")
+    :auxsource '("exception.h" "bitsring.h" "compressors.h" "bitstring.h")
     )
    )
   )

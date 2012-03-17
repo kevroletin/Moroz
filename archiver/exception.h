@@ -26,21 +26,21 @@ private:
   ErrorCode code_val;
 };
 
-Error::Error(ErrorCode code_):
+inline Error::Error(ErrorCode code_):
   code_val(code_),
   msg("unspecified") {}
 
-Error::Error(ErrorCode code_, std::string msg_): 
+inline Error::Error(ErrorCode code_, std::string msg_): 
   msg(msg_), 
   code_val(code_) {}
 
-Error::Error(std::string msg_): msg(msg_), code_val(ERR_UNDEFUNED) {}
+inline Error::Error(std::string msg_): msg(msg_), code_val(ERR_UNDEFUNED) {}
 
-std::string Error::message() {
+inline std::string Error::message() {
   return this->msg;
 }
 
-ErrorCode Error::code() {
+inline ErrorCode Error::code() {
   return this->code_val;
 }
 
