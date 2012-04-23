@@ -16,6 +16,7 @@ public:
       } else {
         parent.data[byte] &= (~mask);
       }
+      return *this;
     };
     operator int() {
       int byte = index / 8;
@@ -62,7 +63,7 @@ public:
 
 class BitsIO {
 public:
-  static const int BUFFER_MAX_SIZE = 128;
+  static const unsigned int BUFFER_MAX_SIZE = 128;
   //static const int BUFFER_MAX_SIZE = ;
 
   BitsIO();

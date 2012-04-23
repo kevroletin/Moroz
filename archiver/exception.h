@@ -27,8 +27,8 @@ private:
 };
 
 inline Error::Error(ErrorCode code_):
-  code_val(code_),
-  msg("unspecified") {}
+  msg("unspecified"),
+  code_val(code_) {}
 
 inline Error::Error(ErrorCode code_, std::string msg_):
   msg(msg_),

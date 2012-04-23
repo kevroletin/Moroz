@@ -60,8 +60,7 @@ void BitStringComputedShifts::dump() {
 }
 
 
-BitsIO::BitsIO(): size(0), shift(0), writed(0),
-                  read_buffer_shift(-1) {}
+BitsIO::BitsIO(): read_buffer_shift(-1), size(0),  shift(0), writed(0) {}
 
 bool BitsIO::read_bit() {
   if (read_buffer_shift == -1) {
@@ -101,7 +100,7 @@ BitsIO& BitsIO::operator<< (BitStringComputedShifts& b) {
 
 void BitsIO::dump() {
   fprintf(stderr, "[%i:%i] ", size, shift);
-  for (int i = 0; i < size - (shift != 0); ++i) {
+  for (unsigned i = 0; i < size - (shift != 0); ++i) {
     cerr << char2bin(buffer[i]);
     cerr << ' ';
   }
@@ -113,7 +112,7 @@ void BitsIO::dump() {
 }
 
 void BitsIO::partial_flush() {
-  for (int i = 0; i < size - (shift != 0); ++i) {
+  for (unsigned i = 0; i < size - (shift != 0); ++i) {
     printf("%c", buffer[i]);
     //    printf("%hhx", buffer[i]);
   }
@@ -166,7 +165,7 @@ void BitString::dump() {
     if (!((i + 1) % 8)) { cerr << ' '; }
   }
 #else
-  for (int i = 0; i < bytes(); ++i) {
+  for (unsigned i = 0; i < bytes(); ++i) {
     fprintf(stderr, "%hhx", data[i]);
   }
 #endif

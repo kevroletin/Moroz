@@ -9,8 +9,8 @@
 top="$(CURDIR)"/
 ede_FILES=Project.ede Makefile
 
-debug_SOURCES=main.cpp haffman.cpp bitstring.cpp
-debug_OBJ= main.o haffman.o bitstring.o
+debug_SOURCES=main.cpp haffman.cpp bitstring.cpp lzw.cpp
+debug_OBJ= main.o haffman.o bitstring.o lzw.o
 CXX= g++
 CXX_COMPILE=$(CXX) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)
 CXX_DEPENDENCIES=-Wp,-MD,.deps/$(*F).P
@@ -19,7 +19,7 @@ VERSION=1.0
 DISTDIR=$(top)simple-archiver-$(VERSION)
 top_builddir = 
 
-DEP_FILES=.deps/main.P .deps/haffman.P .deps/bitstring.P .deps/exception.P .deps/bitsring.P .deps/compressors.P .deps/bitstring.P
+DEP_FILES=.deps/main.P .deps/haffman.P .deps/bitstring.P .deps/lzw.P .deps/exception.P .deps/bitsring.P .deps/compressors.P .deps/bitstring.P
 
 all: debug
 

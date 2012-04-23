@@ -10,13 +10,11 @@
 #include <vector>
 #include <algorithm>
 
-#define WRITE(x) fwrite(&x, sizeof(x), 1, stdout)
-
 void write_arr(const void* p, unsigned size) {
   fwrite(p, 1, size, stdout);
 }
 
-void write_ll(unsigned long long i) {
+void write_ll(unsigned long long i)  {
   fwrite(&i, sizeof(long long int), 1, stdout);
 }
 
@@ -79,7 +77,7 @@ Haffman::Haffman(): tree_root(NULL) {}
 void Haffman::preprocess() {
   memset(table, 0, sizeof(table));
   sizes.clear();
-  for (int i = 0; i < names.size(); ++i) {
+  for (unsigned i = 0; i < names.size(); ++i) {
     freopen(names[i].c_str(), "rb", stdin);
     if (stdin == NULL) {
       throw Error(string("can't open file: ") + names[i]);
@@ -100,7 +98,6 @@ void Haffman::preprocess() {
 
 void Haffman::dump_table() {
   cerr << "\nTable:\n";
-  int j = 0;
   for (int i = 0; i < SYM_COUNT; ++i) {
     fprintf(stderr, "%-3u: %-7llu \n", i, this->table[i]);
   }
@@ -113,37 +110,52 @@ void Haffman::dump_codes() {
   }
 }
 
-void Haffman::dump_header() {
+void BaseCompressor::dump_header() {
   fprintf(stderr, "size: %i\n", sizes.size());
-  for (int i = 0; i < sizes.size(); ++i) {
+  for (unsigned i = 0; i < sizes.size(); ++i) {
     fprintf(stderr, "%llu %s\n", sizes[i], names[i].c_str());
   }
   fprintf(stderr, "\n");
-  dump_table();
 }
 
-void Haffman::read_header() {
+void BaseCompressor::read_header() {
   sizes.clear();
   names.clear();
   char buff[1024];
   unsigned long long size = read_ll();
-  for (int i = 0; i < size; ++i) {
+  for (unsigned i = 0; i < size; ++i) {
     unsigned long long s = read_ll();
     sizes.push_back(s);
     scanf("%s ", buff);
     names.push_back(buff);
   }
+}
+
+void Haffman::read_header() {
+  BaseCompressor::read_header();
+  read_table();
+}
+
+void Haffman::read_table() {
   check_magic("table start");
   fread(table, sizeof(table[0]), 256, stdin);
   check_magic("header finish");
 }
 
-void Haffman::write_header() {
+void BaseCompressor::write_header() {
   write_ll(sizes.size());
-  for (int i = 0; i < sizes.size(); ++i) {
+  for (unsigned i = 0; i < sizes.size(); ++i) {
     write_ll(sizes[i]);
     printf("%s ", names[i].c_str());
   }
+}
+
+void Haffman::write_header() {
+  BaseCompressor::write_header();
+  write_table();
+}
+
+void Haffman::write_table() {
   write_magic();
   fwrite(table, sizeof(table[0]), 256, stdout);
   write_magic();
@@ -154,7 +166,7 @@ void Haffman::preprocess_dummy() {
     table[i] = i;
   }
   sizes.clear();
-  for (int i = 0; i < names.size(); ++i) {
+  for (unsigned i = 0; i < names.size(); ++i) {
     sizes.push_back(0);
     freopen(names[i].c_str(), "rb", stdin);
     while(!feof(stdin)) {
@@ -196,14 +208,15 @@ void Haffman::build_codes() {
 void Haffman::compress(vector<string>& files) {
   string out_file = files[0];
   names.clear();
-  for (int i = 1; i < files.size(); ++i) {
+  for (unsigned i = 1; i < files.size(); ++i) {
     names.push_back(files[i]);
   }
   preprocess();
   freopen(out_file.c_str(), "wb", stdout);
   write_header();
 
-  for (int i = 0; i < names.size(); ++i) {
+  for (unsigned i = 0; i < names.size(); ++i) {
+    report_compression(names[i]);
     freopen(names[i].c_str(), "rb", stdin);
     unsigned char c;
     scanf("%c", &c);
@@ -233,8 +246,8 @@ void Haffman::decompress(string& file) {
   read_header();
   build_codes();
 
-  for (int i = 0; i < names.size(); ++i) {
-    std::cerr << "processing " << names[i].c_str() << endl;
+  for (unsigned i = 0; i < names.size(); ++i) {
+    report_decompression(names[i]);
     io.refresh();
     freopen(names[i].c_str(), "wb", stdout);
     for (unsigned long long j = 0; j < sizes[i]; ++j) {
@@ -247,22 +260,34 @@ void Haffman::decompress(string& file) {
   fclose(stdin);
 }
 
-void Haffman::write_magic() {
+void BaseCompressor::write_magic() {
   write_ll(Haffman::magic);
 }
 
-void Haffman::check_magic() {
+void BaseCompressor::check_magic() {
   unsigned long long u = read_ll();
-  if (u != Haffman::magic) {
+  if (u != BaseCompressor::magic) {
     fprintf(stderr, "%llx\n", u);
     throw Error("wrong magic (corrupted file?)");
   }
 }
 
-void Haffman::check_magic(char const* msg) {
+void BaseCompressor::check_magic(char const* msg) {
+#ifdef DEBUG
   fprintf(stderr, "magic: %s ", msg);
+#endif
   check_magic();
-  fprintf(stderr, " ok\n", msg);
+#ifdef DEBUG
+  fprintf(stderr, " ok\n");
+#endif
+}
+
+void BaseCompressor::report_compression(string& file) {
+  std::cerr << "compressing " << file.c_str() << endl;
+}
+
+void BaseCompressor::report_decompression(string& file) {
+  std::cerr << "decompressing " << file.c_str() << endl;
 }
 
 #ifdef SEPARATE_BUILD_HAFFMAN

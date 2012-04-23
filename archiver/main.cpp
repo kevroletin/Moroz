@@ -60,7 +60,7 @@ bool CmdLineParser::parse_cmd_line(int argc, char* argv[]) {
         this->state  = ST_COMPRESSION_TYPE;
         this->action = ACT_COMPRESSION;
       } else if (argument == "-d") {
-        this->state = ST_FILES;
+        this->state  = ST_COMPRESSION_TYPE;
         this->action = ACT_DECOMPRESSION;
       } else if (argument == "-h") {
         this->state = ST_FILES;
@@ -134,7 +134,7 @@ void CmdLineParser::dump() {
        << "Compressoin: " << compression_descr[this->compression] << endl
        << "Last error: " << this->last_error << endl
        << "Files:";
-  for (int i = 0; i < this->files.size(); ++i) {
+  for (unsigned i = 0; i < this->files.size(); ++i) {
     cout << " " << this->files[i];
   }
   cout << endl;
@@ -146,14 +146,15 @@ int main(int argc, char* argv[]) {
     cerr << "    error: " << cmdp.last_error << "\n";
     cmdp.print_help();
   } else {
-    Haffman h;
+    BaseCompressor* zip = cmdp.compression == CmdLineParser:: COMPR_HAFFMAN ?
+      (BaseCompressor*) new Haffman() : (BaseCompressor*) new LZW();
     try {
       switch (cmdp.action) {
       case (CmdLineParser::ACT_COMPRESSION): {
-        h.compress(cmdp.files);
+        zip->compress(cmdp.files);
       } break;
       case (CmdLineParser::ACT_DECOMPRESSION): {
-        h.decompress(cmdp.files[0]);
+        zip->decompress(cmdp.files[0]);
       } break;
       case (CmdLineParser::ACT_PRINT_HELP):{
         cmdp.print_help();
